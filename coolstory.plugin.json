@@ -1,0 +1,25 @@
+{
+  "schema_version": "0.1",
+  "name": "coolstory",
+  "display_name": "CoolStory",
+  "description": "Connect agents and local developer workflows to CoolStory projects, PRDs, checkpoints, and Git snapshots.",
+  "homepage_url": "https://coolstory.dev",
+  "repository_url": "https://github.com/hassard0/coolstory-plugin",
+  "api_base_url": "https://coolstory.dev",
+  "auth": {
+    "type": "bearer_token",
+    "environment_variable": "COOLSTORY_TOKEN",
+    "setup_command": "coolstory-plugin auth login --token <token>"
+  },
+  "commands": [
+    "coolstory-plugin whoami",
+    "coolstory-plugin repos list",
+    "coolstory-plugin repos refs <repo>",
+    "coolstory-plugin prds list <repo>",
+    "coolstory-plugin prds get <repo> <prd>",
+    "coolstory-plugin checkpoints list <repo>",
+    "coolstory-plugin checkpoint <title> --repo <repo> --file <path>",
+    "coolstory-plugin repos archive <repo> --ref main"
+  ]
+}
+

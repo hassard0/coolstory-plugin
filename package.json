@@ -1,0 +1,32 @@
+{
+  "name": "coolstory-plugin",
+  "version": "0.1.0",
+  "description": "Public CoolStory agent and CLI integration plugin.",
+  "type": "module",
+  "bin": {
+    "coolstory-plugin": "src/index.js",
+    "coolstory": "src/index.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "src",
+    "coolstory.plugin.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "smoke": "node src/index.js --help"
+  },
+  "keywords": [
+    "coolstory",
+    "agent",
+    "plugin",
+    "cli",
+    "git",
+    "prd"
+  ],
+  "license": "MIT"
+}
+
