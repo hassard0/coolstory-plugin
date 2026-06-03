@@ -2,7 +2,18 @@
 
 Public CoolStory agent and CLI integration package.
 
-This repository is intentionally separate from the private CoolStory product repository. Users, agents, and customer environments should install this plugin instead of cloning the private app source.
+This repository is intentionally separate from the private CoolStory product repository. Users, agents, customer environments, and BMAD workspaces should install this plugin instead of cloning the private app source.
+
+## What This Does
+
+`coolstory-plugin` lets agents and local developer workflows:
+
+- authenticate to CoolStory with a personal access token
+- list accessible projects and repositories
+- read PRDs into an agent context
+- inspect Git refs and download authenticated snapshots
+- queue implementation checkpoints against a branch
+- hand off work back to CoolStory for review, history, and pull requests
 
 ## Install
 
@@ -17,6 +28,8 @@ Verify:
 ```bash
 coolstory-plugin --help
 ```
+
+The package also exposes a `coolstory` alias, but docs use `coolstory-plugin` so it is clear this is the public integration package.
 
 ## Connect
 
@@ -35,34 +48,27 @@ coolstory-plugin auth login --api-url https://coolstory.dev --token cs_pat_xxxxx
 You can also avoid local storage and use environment variables:
 
 ```bash
-COOLSTORY_API_URL=https://coolstory.dev
-COOLSTORY_TOKEN=cs_pat_xxxxxxxxxxxxxxxx
+export COOLSTORY_API_URL=https://coolstory.dev
+export COOLSTORY_TOKEN=cs_pat_xxxxxxxxxxxxxxxx
 ```
 
-## Common Agent Workflows
-
-List repositories visible to the token:
+## Quickstart
 
 ```bash
+coolstory-plugin quickstart
+coolstory-plugin whoami
 coolstory-plugin repos list
+coolstory-plugin prds list <repo-slug>
+coolstory-plugin prds get <repo-slug> <prd-slug>
+coolstory-plugin checkpoint "Implemented PRD slice" --repo <repo-slug> --file <path>
 ```
+
+## Common Workflows
 
 Inspect branch refs:
 
 ```bash
 coolstory-plugin repos refs my-project
-```
-
-Fetch a PRD into an agent context:
-
-```bash
-coolstory-plugin prds get my-project launch-prd
-```
-
-Queue a checkpoint for the current branch:
-
-```bash
-coolstory-plugin checkpoint "Agent implementation checkpoint" --repo my-project --file src/app.ts
 ```
 
 Download a repository snapshot:
@@ -71,29 +77,61 @@ Download a repository snapshot:
 coolstory-plugin repos archive my-project --ref main
 ```
 
-Show an agent-oriented quickstart:
+Queue a checkpoint for the current branch:
 
 ```bash
-coolstory-plugin quickstart
+coolstory-plugin checkpoint "Agent implementation checkpoint" --repo my-project --branch feature/agent-work --file src/app.ts
 ```
+
+Fetch a PRD as JSON for custom tooling:
+
+```bash
+coolstory-plugin prds get my-project launch-prd --json
+```
+
+## BMAD Integration
+
+BMAD teams should treat CoolStory as the source of truth for product artifacts, project context, checkpoints, and review history.
+
+Recommended agent loop:
+
+1. Discover the repo and PRD:
+
+   ```bash
+   coolstory-plugin repos list
+   coolstory-plugin prds list <repo-slug>
+   coolstory-plugin prds get <repo-slug> <prd-slug>
+   ```
+
+2. Load the PRD and project files into the BMAD agent context.
+
+3. Implement in a normal Git branch.
+
+4. Queue a checkpoint back to CoolStory:
+
+   ```bash
+   coolstory-plugin checkpoint "BMAD dev agent checkpoint" --repo <repo-slug> --branch <branch> --file <changed-file>
+   ```
+
+5. Review the branch, comments, checkpoint history, and pull request in CoolStory.
+
+Detailed guide: [docs/bmad.md](docs/bmad.md)
+
+## Docs
+
+- [BMAD integration](docs/bmad.md)
+- [Command reference](docs/commands.md)
+- [Security model](docs/security.md)
+- [Troubleshooting](docs/troubleshooting.md)
 
 ## Auth And Security
 
 - Tokens are read from `COOLSTORY_TOKEN` first.
 - If no environment token is present, the plugin reads `~/.coolstory/plugin.json`.
 - `~/.coolstory/plugin.json` is created with user-only permissions where the platform supports it.
-- The plugin only calls the public CoolStory API surface. It does not need access to the private CoolStory app repository.
+- The plugin only calls the public CoolStory API surface.
+- The plugin does not need access to the private CoolStory app repository.
 
-## Public API Surface
+## License
 
-The plugin currently uses:
-
-- `GET /api/public/cli/whoami`
-- `GET /api/public/cli/repos`
-- `GET /api/public/cli/repos/:slug/prds`
-- `GET /api/public/cli/repos/:slug/prds/:prdSlug`
-- `GET /api/public/cli/repos/:slug/checkpoints`
-- `POST /api/public/cli/repos/:slug/checkpoints`
-- `GET /api/public/git/repos/:slug/refs`
-- `GET /api/public/git/repos/:slug/archive?ref=main`
-
+MIT. See [LICENSE](LICENSE).
