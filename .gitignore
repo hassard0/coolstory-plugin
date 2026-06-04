@@ -1,4 +1,8 @@
 node_modules/
+dist/
+dist-electron/
+dist-artifacts*/
+run-current-release/
 *.log
 *.tgz
 .env

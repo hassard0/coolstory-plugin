@@ -43,6 +43,9 @@ jobs:
       - name: Smoke
         run: npm run smoke
 
+      - name: Desktop smoke
+        run: npm run smoke:desktop
+
       - name: Build desktop app
         run: npm run build:desktop -- ${{ matrix.target }}
 
