@@ -6,7 +6,7 @@ const dist = "dist";
 mkdirSync(dist, { recursive: true });
 
 const ext = process.platform === "win32" ? ".exe" : "";
-const defaultName = process.platform === "win32" ? "coolstory-plugin.exe" : "coolstory-plugin";
+const defaultName = process.platform === "win32" ? "coolstory-desktop.exe" : "coolstory-desktop";
 const binaryName = process.env.COOLSTORY_BINARY_NAME || defaultName;
 const blobPath = join(dist, "coolstory-plugin.blob");
 const seaConfigPath = join(dist, "sea-config.json");

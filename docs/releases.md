@@ -12,9 +12,9 @@ npm install -g github:hassard0/coolstory-plugin
 
 GitHub Actions builds:
 
-- `coolstory-plugin-win-x64.exe`
-- `coolstory-plugin-macos-arm64`
-- `coolstory-plugin-linux-x64`
+- `coolstory-desktop-win-x64.exe`
+- `coolstory-desktop-macos-arm64`
+- `coolstory-desktop-linux-x64`
 
 Run the `Release Binaries` workflow manually or push a `v*` tag.
 

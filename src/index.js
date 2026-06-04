@@ -292,6 +292,39 @@ async function gui() {
         sendJson(res, await apiRequest(config, `/api/public/cli/repos/${encodeURIComponent(repo)}/prds`));
         return;
       }
+      if (req.method === "GET" && url.pathname === "/api/prd") {
+        const repo = url.searchParams.get("repo");
+        const prd = url.searchParams.get("prd");
+        if (!repo || !prd) {
+          sendJson(res, { error: "repo and prd are required" }, 400);
+          return;
+        }
+        const config = await requireAuth();
+        sendJson(res, await apiRequest(config, `/api/public/cli/repos/${encodeURIComponent(repo)}/prds/${encodeURIComponent(prd)}`));
+        return;
+      }
+      if (url.pathname === "/api/collab") {
+        const repo = url.searchParams.get("repo");
+        const prd = url.searchParams.get("prd");
+        if (!repo || !prd) {
+          sendJson(res, { error: "repo and prd are required" }, 400);
+          return;
+        }
+        const config = await requireAuth();
+        if (req.method === "GET") {
+          const after = url.searchParams.get("after_revision") ?? "0";
+          sendJson(res, await apiRequest(config, `/api/public/cli/repos/${encodeURIComponent(repo)}/prds/${encodeURIComponent(prd)}/collab?after_revision=${encodeURIComponent(after)}`));
+          return;
+        }
+        if (req.method === "POST") {
+          const body = await readJson(req);
+          sendJson(res, await apiRequest(config, `/api/public/cli/repos/${encodeURIComponent(repo)}/prds/${encodeURIComponent(prd)}/collab`, {
+            method: "POST",
+            body: JSON.stringify(body),
+          }));
+          return;
+        }
+      }
       if (req.method === "GET" && url.pathname === "/api/checkpoints") {
         const repo = url.searchParams.get("repo");
         if (!repo) {
@@ -680,7 +713,7 @@ function desktopHtmlLegacy() {
     </main>
   </div>
   <script>
-    const state = { status: null, pollTimer: null, repos: [], selectedRepo: null };
+    const state = { status: null, pollTimer: null, repos: [], selectedRepo: null, selectedArtifact: null, editorContent: "", editorRevision: 0, editorPoll: null, editorBusy: false, editorQueuedContent: null };
     const $ = (id) => document.getElementById(id);
     document.querySelectorAll("nav button").forEach((button) => button.addEventListener("click", () => show(button.dataset.view)));
     document.querySelectorAll("[data-jump]").forEach((button) => button.addEventListener("click", () => show(button.dataset.jump)));
@@ -936,6 +969,19 @@ function desktopHtml() {
       padding: 10px 11px;
       min-width: 260px;
     }
+    .doc-editor {
+      width: 100%;
+      min-height: 52vh;
+      resize: vertical;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #050b0f;
+      color: var(--text);
+      padding: 20px;
+      font: 15px/1.7 ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      outline: none;
+    }
+    .doc-editor:focus { border-color: var(--yellow); }
     button.primary, button.secondary, button.danger {
       border: 1px solid var(--border);
       border-radius: 7px;
@@ -1028,6 +1074,7 @@ function desktopHtml() {
             <button data-view="home" class="active">Workspace</button>
             <button data-view="projects">Repos</button>
             <button data-view="artifacts">Artifacts</button>
+            <button data-view="editor">Editor</button>
             <button data-view="checkpoints">Checkpoints</button>
             <button data-view="quickstart">Quickstart</button>
             <button data-view="settings">Settings</button>
@@ -1107,6 +1154,17 @@ function desktopHtml() {
                 <div id="artifactViewList" class="list"></div>
               </div>
             </section>
+            <section id="editor" class="hide">
+              <p class="doc-path" id="editorPath">editor</p>
+              <h1 id="editorTitle">Editor</h1>
+              <p class="lede" id="editorLead">Open an artifact to edit it collaboratively with other CoolStory web and desktop sessions.</p>
+              <div class="checkpoint">
+                <div><strong id="editorSync">+ no artifact open</strong></div>
+                <div id="editorMeta">Choose an artifact from the Artifacts view.</div>
+                <div class="ai" id="editorRevision">rev 0</div>
+              </div>
+              <textarea id="artifactEditor" class="doc-editor" spellcheck="false" placeholder="Open an artifact to start editing..."></textarea>
+            </section>
             <section id="checkpoints" class="hide">
               <p class="doc-path" id="checkpointsPath">checkpoints</p>
               <h1>Checkpoints</h1>
@@ -1168,6 +1226,7 @@ function desktopHtml() {
     $("loadPrds").addEventListener("click", () => selectAndLoadArtifacts($("projectSelect").value));
     $("loadArtifactsView").addEventListener("click", () => loadPrds(state.selectedRepo?.slug));
     $("loadCheckpoints").addEventListener("click", () => loadCheckpoints(state.selectedRepo?.slug));
+    $("artifactEditor").addEventListener("input", (event) => editArtifact(event.target.value));
 
     function show(view) {
       document.querySelectorAll("main section").forEach((section) => section.classList.toggle("hide", section.id !== view));
@@ -1266,9 +1325,10 @@ function desktopHtml() {
       try {
         const data = await api("/api/prds?repo=" + encodeURIComponent(repo));
         const prds = data.prds || [];
-        const html = prds.map((prd) => '<div class="item"><strong>' + escapeHtml(prd.title) + '</strong><div class="mono">' + escapeHtml(prd.slug) + ' · ' + escapeHtml(prd.status) + ' · ' + escapeHtml(prd.branch_name) + '</div></div>').join("") || '<p>No artifacts found.</p>';
+        const html = prds.map((prd) => '<div class="item" data-prd="' + escapeHtml(prd.slug) + '"><strong>' + escapeHtml(prd.title) + '</strong><div class="mono">' + escapeHtml(prd.slug) + ' · ' + escapeHtml(prd.status) + ' · ' + escapeHtml(prd.branch_name) + '</div></div>').join("") || '<p>No artifacts found.</p>';
         $("prdList").innerHTML = html;
         $("artifactViewList").innerHTML = html;
+        document.querySelectorAll("[data-prd]").forEach((el) => el.addEventListener("click", () => openArtifactEditor(repo, el.dataset.prd)));
         $("activityRail").innerHTML = '<div class="comment yellow"><div class="meta">Artifacts</div><div class="body-text">' + prds.length + ' artifact' + (prds.length === 1 ? '' : 's') + ' loaded for ' + escapeHtml(repo) + '.</div></div>';
       } catch (error) {
         const html = '<p>' + escapeHtml(error.message) + '</p>';
@@ -1289,6 +1349,98 @@ function desktopHtml() {
       } catch (error) {
         $("checkpointList").innerHTML = '<p>' + escapeHtml(error.message) + '</p>';
       }
+    }
+    async function openArtifactEditor(repo, prd) {
+      if (!repo || !prd) return;
+      const data = await api("/api/prd?repo=" + encodeURIComponent(repo) + "&prd=" + encodeURIComponent(prd));
+      state.selectedArtifact = { repo, prd, title: data.prd.title };
+      state.editorContent = data.prd.content || "";
+      state.editorRevision = data.prd.collab_revision || 0;
+      $("artifactEditor").value = state.editorContent;
+      $("editorTitle").textContent = data.prd.title || prd;
+      $("editorPath").textContent = "repos/" + repo + "/artifacts/" + prd;
+      $("editorMeta").textContent = data.prd.status + " · " + data.prd.branch_name;
+      $("editorSync").textContent = "+ live collaborative editor";
+      $("editorRevision").textContent = "rev " + state.editorRevision;
+      clearInterval(state.editorPoll);
+      state.editorPoll = setInterval(pollArtifactEditor, 1000);
+      show("editor");
+    }
+    async function pollArtifactEditor() {
+      if (!state.selectedArtifact || state.editorBusy || state.editorQueuedContent !== null) return;
+      try {
+        const { repo, prd } = state.selectedArtifact;
+        const data = await api("/api/collab?repo=" + encodeURIComponent(repo) + "&prd=" + encodeURIComponent(prd) + "&after_revision=" + encodeURIComponent(state.editorRevision));
+        const ops = data.ops || [];
+        if (ops.length) {
+          let next = state.editorContent;
+          for (const op of ops) next = applyTextEdit(next, op);
+          state.editorContent = next;
+          state.editorRevision = data.prd.revision;
+          $("artifactEditor").value = next;
+        } else if (data.prd.revision > state.editorRevision && data.prd.content !== state.editorContent) {
+          state.editorContent = data.prd.content;
+          state.editorRevision = data.prd.revision;
+          $("artifactEditor").value = data.prd.content;
+        }
+        $("editorSync").textContent = "+ synced with web and desktop sessions";
+        $("editorRevision").textContent = "rev " + state.editorRevision;
+      } catch (error) {
+        $("editorSync").textContent = "+ sync paused: " + error.message;
+      }
+    }
+    async function editArtifact(nextContent) {
+      if (!state.selectedArtifact) return;
+      if (state.editorBusy) {
+        state.editorQueuedContent = nextContent;
+        $("editorSync").textContent = "+ edit queued";
+        return;
+      }
+      const before = state.editorContent;
+      if (before === nextContent) return;
+      const op = diffText(before, nextContent);
+      state.editorContent = nextContent;
+      state.editorBusy = true;
+      $("editorSync").textContent = "+ syncing edit";
+      try {
+        const { repo, prd } = state.selectedArtifact;
+        const data = await api("/api/collab?repo=" + encodeURIComponent(repo) + "&prd=" + encodeURIComponent(prd), {
+          method: "POST",
+          body: JSON.stringify({ base_revision: state.editorRevision, ...op }),
+        });
+        state.editorContent = data.content;
+        state.editorRevision = data.revision;
+        $("artifactEditor").value = data.content;
+        $("editorSync").textContent = "+ live collaborative editor";
+        $("editorRevision").textContent = "rev " + data.revision;
+      } catch (error) {
+        $("editorSync").textContent = "+ edit failed: " + error.message;
+      } finally {
+        state.editorBusy = false;
+        if (state.editorQueuedContent !== null && state.editorQueuedContent !== state.editorContent) {
+          const queued = state.editorQueuedContent;
+          state.editorQueuedContent = null;
+          editArtifact(queued);
+        } else {
+          state.editorQueuedContent = null;
+        }
+      }
+    }
+    function applyTextEdit(content, op) {
+      const start = Math.max(0, Math.min(op.start_index, content.length));
+      const end = Math.max(start, Math.min(start + op.delete_count, content.length));
+      return content.slice(0, start) + op.insert_text + content.slice(end);
+    }
+    function diffText(before, after) {
+      let start = 0;
+      while (start < before.length && start < after.length && before[start] === after[start]) start++;
+      let beforeEnd = before.length;
+      let afterEnd = after.length;
+      while (beforeEnd > start && afterEnd > start && before[beforeEnd - 1] === after[afterEnd - 1]) {
+        beforeEnd--;
+        afterEnd--;
+      }
+      return { start_index: start, delete_count: beforeEnd - start, insert_text: after.slice(start, afterEnd) };
     }
     async function loadQuickstart() {
       const data = await api("/api/quickstart");

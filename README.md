@@ -44,9 +44,9 @@ The client opens a local GUI in your browser. Click **Connect with browser** to 
 
 Release builds publish standalone binaries for:
 
-- Windows x64: `coolstory-plugin-win-x64.exe`
-- macOS Apple Silicon: `coolstory-plugin-macos-arm64`
-- Linux x64: `coolstory-plugin-linux-x64`
+- Windows x64: `coolstory-desktop-win-x64.exe`
+- macOS Apple Silicon: `coolstory-desktop-macos-arm64`
+- Linux x64: `coolstory-desktop-linux-x64`
 
 Build locally from this repository:
 

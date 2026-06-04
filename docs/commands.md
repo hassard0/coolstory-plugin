@@ -67,8 +67,8 @@ npm run build:binary
 
 Outputs:
 
-- `dist/coolstory-plugin-win-x64.exe`
-- `dist/coolstory-plugin-macos-arm64`
-- `dist/coolstory-plugin-linux-x64`
+- `dist/coolstory-desktop-win-x64.exe`
+- `dist/coolstory-desktop-macos-arm64`
+- `dist/coolstory-desktop-linux-x64`
 
 Windows and macOS binaries are built by the `Release Binaries` GitHub Actions workflow on native runners using Node SEA. Source installs still require Node.js 20 or newer.
