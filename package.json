@@ -4,6 +4,7 @@
   "description": "Public CoolStory agent and CLI integration plugin.",
   "type": "module",
   "bin": {
+    "coolstory-desktop": "src/index.js",
     "coolstory-plugin": "src/index.js",
     "coolstory": "src/index.js"
   },

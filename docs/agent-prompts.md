@@ -26,10 +26,10 @@ Before finishing:
 Suggested command sequence:
 
 ```bash
-coolstory-plugin prds get <repo-slug> <prd-slug>
+coolstory-desktop prds get <repo-slug> <prd-slug>
 git checkout -b feature/<short-name>
 # agent edits files
-coolstory-plugin checkpoint "Implemented <slice>" --repo <repo-slug> --branch feature/<short-name> --file <path>
+coolstory-desktop checkpoint "Implemented <slice>" --repo <repo-slug> --branch feature/<short-name> --file <path>
 ```
 
 ## Reviewer Agent

@@ -11,7 +11,7 @@ npm install -g github:hassard0/coolstory-plugin
 Verify:
 
 ```bash
-coolstory-plugin --help
+coolstory-desktop --help
 ```
 
 ## 2. Create A Token
@@ -35,16 +35,16 @@ In CoolStory:
 Then connect locally:
 
 ```bash
-coolstory-plugin auth login --token cs_pat_xxxxxxxxxxxxxxxx
-coolstory-plugin whoami
+coolstory-desktop auth login --token cs_pat_xxxxxxxxxxxxxxxx
+coolstory-desktop whoami
 ```
 
 ## 3. Find Your Work
 
 ```bash
-coolstory-plugin repos list
-coolstory-plugin prds list <repo-slug>
-coolstory-plugin prds get <repo-slug> <prd-slug>
+coolstory-desktop repos list
+coolstory-desktop prds list <repo-slug>
+coolstory-desktop prds get <repo-slug> <prd-slug>
 ```
 
 ## 4. Work In Git
@@ -58,7 +58,7 @@ git checkout -b feature/<short-name>
 ## 5. Send A Checkpoint Back
 
 ```bash
-coolstory-plugin checkpoint "Implemented first slice" \
+coolstory-desktop checkpoint "Implemented first slice" \
   --repo <repo-slug> \
   --branch feature/<short-name> \
   --summary "Implemented the initial behavior and added tests." \

@@ -17,7 +17,7 @@ The API URL resolves in this order:
 
 ## Local Storage
 
-`coolstory-plugin auth login` writes:
+`coolstory-desktop auth login` writes:
 
 ```text
 ~/.coolstory/plugin.json

@@ -20,14 +20,14 @@ npm install -g github:hassard0/coolstory-plugin
 Authenticate with a CoolStory personal access token:
 
 ```bash
-coolstory-plugin auth login --token cs_pat_xxxxxxxxxxxxxxxx
+coolstory-desktop auth login --token cs_pat_xxxxxxxxxxxxxxxx
 ```
 
 Confirm the agent can see the current user and repos:
 
 ```bash
-coolstory-plugin whoami
-coolstory-plugin repos list
+coolstory-desktop whoami
+coolstory-desktop repos list
 ```
 
 ## Recommended BMAD Agent Loop
@@ -35,9 +35,9 @@ coolstory-plugin repos list
 ### 1. Discover context
 
 ```bash
-coolstory-plugin repos list
-coolstory-plugin prds list <repo-slug>
-coolstory-plugin prds get <repo-slug> <prd-slug>
+coolstory-desktop repos list
+coolstory-desktop prds list <repo-slug>
+coolstory-desktop prds get <repo-slug> <prd-slug>
 ```
 
 Use the PRD content as the primary product requirement input for the BMAD agent.
@@ -71,7 +71,7 @@ git checkout -b feature/<short-name>
 When the BMAD agent finishes a coherent slice:
 
 ```bash
-coolstory-plugin checkpoint "Implemented <feature>" \
+coolstory-desktop checkpoint "Implemented <feature>" \
   --repo <repo-slug> \
   --branch feature/<short-name> \
   --summary "What changed and why" \
@@ -104,7 +104,7 @@ For ephemeral agent containers:
 ```bash
 export COOLSTORY_API_URL=https://coolstory.dev
 export COOLSTORY_TOKEN=cs_pat_xxxxxxxxxxxxxxxx
-coolstory-plugin prds get <repo-slug> <prd-slug>
+coolstory-desktop prds get <repo-slug> <prd-slug>
 ```
 
 This avoids writing `~/.coolstory/plugin.json`.

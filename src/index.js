@@ -37,21 +37,21 @@ async function main() {
 }
 
 function help() {
-  console.log(`CoolStory plugin ${VERSION}
+  console.log(`CoolStory desktop ${VERSION}
 
 Usage:
-  coolstory-plugin auth login --token <token> [--api-url https://coolstory.dev]
-  coolstory-plugin status
-  coolstory-plugin whoami
-  coolstory-plugin repos list
-  coolstory-plugin repos refs <repo>
-  coolstory-plugin repos archive <repo> [output.tar] [--ref main]
-  coolstory-plugin prds list <repo>
-  coolstory-plugin prds get <repo> <prd> [--json]
-  coolstory-plugin checkpoints list <repo>
-  coolstory-plugin checkpoint <title> --repo <repo> [--summary "..."] [--file path ...]
-  coolstory-plugin gui
-  coolstory-plugin quickstart
+  coolstory-desktop auth login --token <token> [--api-url https://coolstory.dev]
+  coolstory-desktop status
+  coolstory-desktop whoami
+  coolstory-desktop repos list
+  coolstory-desktop repos refs <repo>
+  coolstory-desktop repos archive <repo> [output.tar] [--ref main]
+  coolstory-desktop prds list <repo>
+  coolstory-desktop prds get <repo> <prd> [--json]
+  coolstory-desktop checkpoints list <repo>
+  coolstory-desktop checkpoint <title> --repo <repo> [--summary "..."] [--file path ...]
+  coolstory-desktop gui
+  coolstory-desktop quickstart
 
 Environment:
   COOLSTORY_API_URL=https://coolstory.dev
@@ -65,7 +65,7 @@ function version() {
 async function auth(args) {
   const [subcommand, ...rest] = args;
   if (subcommand !== "login") {
-    throw new Error("Usage: coolstory-plugin auth login --token <token> [--api-url <url>]");
+    throw new Error("Usage: coolstory-desktop auth login --token <token> [--api-url <url>]");
   }
   const options = parseOptions(rest);
   if (!options.token) {
@@ -78,7 +78,7 @@ async function auth(args) {
 
 async function status() {
   const config = await loadConfig();
-  console.log("CoolStory plugin");
+  console.log("CoolStory desktop");
   console.log(`API: ${config.apiUrl}`);
   console.log(`Token: ${config.token ? "configured" : "missing"}`);
   try {
@@ -129,7 +129,7 @@ async function repos(args) {
     console.log(`Wrote ${target}`);
     return;
   }
-  throw new Error("Usage: coolstory-plugin repos <list|refs|archive>");
+  throw new Error("Usage: coolstory-desktop repos <list|refs|archive>");
 }
 
 async function prds(args) {
@@ -154,13 +154,13 @@ async function prds(args) {
     console.log(response.prd?.content ?? "");
     return;
   }
-  throw new Error("Usage: coolstory-plugin prds <list|get>");
+  throw new Error("Usage: coolstory-desktop prds <list|get>");
 }
 
 async function checkpoints(args) {
   const [subcommand, repo] = args;
   if (subcommand !== "list") {
-    throw new Error("Usage: coolstory-plugin checkpoints list <repo>");
+    throw new Error("Usage: coolstory-desktop checkpoints list <repo>");
   }
   requireValue(repo, "repo");
   const config = await requireAuth();
@@ -200,17 +200,17 @@ function quickstart() {
   console.log(`CoolStory agent quickstart
 
 1. Authenticate:
-   coolstory-plugin auth login --token cs_pat_xxxxxxxxxxxxxxxx
+   coolstory-desktop auth login --token cs_pat_xxxxxxxxxxxxxxxx
 
 2. Discover the project:
-   coolstory-plugin repos list
-   coolstory-plugin prds list <repo>
-   coolstory-plugin prds get <repo> <prd>
+   coolstory-desktop repos list
+   coolstory-desktop prds list <repo>
+   coolstory-desktop prds get <repo> <prd>
 
 3. Work from the PRD and cite files you changed.
 
 4. Queue a checkpoint:
-   coolstory-plugin checkpoint "Implemented PRD slice" --repo <repo> --file <path>
+   coolstory-desktop checkpoint "Implemented PRD slice" --repo <repo> --file <path>
 
 5. Open CoolStory to review branch history, comments, and PRs:
    https://coolstory.dev/app`);
@@ -356,7 +356,7 @@ async function gui() {
 async function requireAuth() {
   const config = await loadConfig();
   if (!config.token) {
-    throw new Error("Missing token. Run `coolstory-plugin auth login --token <token>` or set COOLSTORY_TOKEN.");
+    throw new Error("Missing token. Run `coolstory-desktop auth login --token <token>` or set COOLSTORY_TOKEN.");
   }
   return config;
 }
@@ -466,14 +466,8 @@ async function readJson(req) {
 }
 
 function openExternal(url) {
-  const command = process.platform === "win32"
-    ? "powershell.exe"
-    : process.platform === "darwin"
-      ? "open"
-      : "xdg-open";
-  const args = process.platform === "win32"
-    ? ["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", "Start-Process", url]
-    : [url];
+  const command = process.platform === "win32" ? "explorer.exe" : process.platform === "darwin" ? "open" : "xdg-open";
+  const args = [url];
   const child = spawn(command, args, { detached: true, stdio: "ignore" });
   child.on("error", () => {
     console.log(`Open this URL in your browser: ${url}`);

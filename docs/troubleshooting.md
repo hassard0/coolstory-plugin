@@ -5,7 +5,7 @@
 Run:
 
 ```bash
-coolstory-plugin auth login --token cs_pat_xxxxxxxxxxxxxxxx
+coolstory-desktop auth login --token cs_pat_xxxxxxxxxxxxxxxx
 ```
 
 Or set:
@@ -21,7 +21,7 @@ The token is missing, expired, or does not have access to the requested company/
 Create a new token in CoolStory and confirm:
 
 ```bash
-coolstory-plugin whoami
+coolstory-desktop whoami
 ```
 
 ## `404 Not Found`
@@ -29,8 +29,8 @@ coolstory-plugin whoami
 Check the repository slug and PRD slug:
 
 ```bash
-coolstory-plugin repos list
-coolstory-plugin prds list <repo-slug>
+coolstory-desktop repos list
+coolstory-desktop prds list <repo-slug>
 ```
 
 ## Cannot install from GitHub

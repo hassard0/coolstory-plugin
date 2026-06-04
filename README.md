@@ -6,7 +6,7 @@ This repository is intentionally separate from the private CoolStory product rep
 
 ## What This Does
 
-`coolstory-plugin` lets desktop users, agents, and local developer workflows:
+`coolstory-desktop` lets desktop users, agents, and local developer workflows:
 
 - authenticate to CoolStory through a browser-approved web session
 - launch a local desktop-style GUI for project and artifact context
@@ -27,15 +27,15 @@ npm install -g github:hassard0/coolstory-plugin
 Verify:
 
 ```bash
-coolstory-plugin --help
+coolstory-desktop --help
 ```
 
-The package also exposes a `coolstory` alias, but docs use `coolstory-plugin` so it is clear this is the public integration package.
+The package also exposes `coolstory-plugin` and `coolstory` aliases, but docs use `coolstory-desktop` for the client command.
 
 Launch the desktop GUI:
 
 ```bash
-coolstory-plugin
+coolstory-desktop
 ```
 
 The client opens a local GUI in your browser. Click **Connect with browser** to approve the device-code request inside your authenticated CoolStory web session. After approval, the client stores the generated CoolStory token locally.
@@ -74,13 +74,13 @@ Agent and CI fallback:
 Create a personal access token in CoolStory, then store it locally:
 
 ```bash
-coolstory-plugin auth login --token cs_pat_xxxxxxxxxxxxxxxx
+coolstory-desktop auth login --token cs_pat_xxxxxxxxxxxxxxxx
 ```
 
 For a different environment:
 
 ```bash
-coolstory-plugin auth login --api-url https://coolstory.dev --token cs_pat_xxxxxxxxxxxxxxxx
+coolstory-desktop auth login --api-url https://coolstory.dev --token cs_pat_xxxxxxxxxxxxxxxx
 ```
 
 You can also avoid local storage and use environment variables:
@@ -93,12 +93,12 @@ export COOLSTORY_TOKEN=cs_pat_xxxxxxxxxxxxxxxx
 ## Quickstart
 
 ```bash
-coolstory-plugin quickstart
-coolstory-plugin whoami
-coolstory-plugin repos list
-coolstory-plugin prds list <repo-slug>
-coolstory-plugin prds get <repo-slug> <prd-slug>
-coolstory-plugin checkpoint "Implemented PRD slice" --repo <repo-slug> --file <path>
+coolstory-desktop quickstart
+coolstory-desktop whoami
+coolstory-desktop repos list
+coolstory-desktop prds list <repo-slug>
+coolstory-desktop prds get <repo-slug> <prd-slug>
+coolstory-desktop checkpoint "Implemented PRD slice" --repo <repo-slug> --file <path>
 ```
 
 ## Common Workflows
@@ -106,25 +106,25 @@ coolstory-plugin checkpoint "Implemented PRD slice" --repo <repo-slug> --file <p
 Inspect branch refs:
 
 ```bash
-coolstory-plugin repos refs my-project
+coolstory-desktop repos refs my-project
 ```
 
 Download a repository snapshot:
 
 ```bash
-coolstory-plugin repos archive my-project --ref main
+coolstory-desktop repos archive my-project --ref main
 ```
 
 Queue a checkpoint for the current branch:
 
 ```bash
-coolstory-plugin checkpoint "Agent implementation checkpoint" --repo my-project --branch feature/agent-work --file src/app.ts
+coolstory-desktop checkpoint "Agent implementation checkpoint" --repo my-project --branch feature/agent-work --file src/app.ts
 ```
 
 Fetch a PRD as JSON for custom tooling:
 
 ```bash
-coolstory-plugin prds get my-project launch-prd --json
+coolstory-desktop prds get my-project launch-prd --json
 ```
 
 ## BMAD Integration
@@ -136,9 +136,9 @@ Recommended agent loop:
 1. Discover the repo and PRD:
 
    ```bash
-   coolstory-plugin repos list
-   coolstory-plugin prds list <repo-slug>
-   coolstory-plugin prds get <repo-slug> <prd-slug>
+   coolstory-desktop repos list
+   coolstory-desktop prds list <repo-slug>
+   coolstory-desktop prds get <repo-slug> <prd-slug>
    ```
 
 2. Load the PRD and project files into the BMAD agent context.
@@ -148,7 +148,7 @@ Recommended agent loop:
 4. Queue a checkpoint back to CoolStory:
 
    ```bash
-   coolstory-plugin checkpoint "BMAD dev agent checkpoint" --repo <repo-slug> --branch <branch> --file <changed-file>
+   coolstory-desktop checkpoint "BMAD dev agent checkpoint" --repo <repo-slug> --branch <branch> --file <changed-file>
    ```
 
 5. Review the branch, comments, checkpoint history, and pull request in CoolStory.

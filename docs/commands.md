@@ -4,7 +4,7 @@
 
 ```bash
 coolstory-plugin
-coolstory-plugin gui
+coolstory-desktop gui
 ```
 
 Launches a local desktop-style GUI and opens it in the default browser. Authentication uses CoolStory's device-code flow: the client starts a connection request, the user approves it in the authenticated CoolStory web app, and the client stores the generated token locally.
@@ -12,7 +12,7 @@ Launches a local desktop-style GUI and opens it in the default browser. Authenti
 ## Auth
 
 ```bash
-coolstory-plugin auth login --token <token> [--api-url https://coolstory.dev]
+coolstory-desktop auth login --token <token> [--api-url https://coolstory.dev]
 ```
 
 Stores CoolStory API URL and token in `~/.coolstory/plugin.json`.
@@ -20,7 +20,7 @@ Stores CoolStory API URL and token in `~/.coolstory/plugin.json`.
 ## Status
 
 ```bash
-coolstory-plugin status
+coolstory-desktop status
 ```
 
 Shows configured API URL, token presence, and backend health.
@@ -28,7 +28,7 @@ Shows configured API URL, token presence, and backend health.
 ## Current User
 
 ```bash
-coolstory-plugin whoami
+coolstory-desktop whoami
 ```
 
 Shows the CoolStory profile attached to the configured token.
@@ -36,24 +36,24 @@ Shows the CoolStory profile attached to the configured token.
 ## Repositories
 
 ```bash
-coolstory-plugin repos list
-coolstory-plugin repos refs <repo-slug>
-coolstory-plugin repos archive <repo-slug> [output.tar] [--ref main]
+coolstory-desktop repos list
+coolstory-desktop repos refs <repo-slug>
+coolstory-desktop repos archive <repo-slug> [output.tar] [--ref main]
 ```
 
 ## PRDs
 
 ```bash
-coolstory-plugin prds list <repo-slug>
-coolstory-plugin prds get <repo-slug> <prd-slug>
-coolstory-plugin prds get <repo-slug> <prd-slug> --json
+coolstory-desktop prds list <repo-slug>
+coolstory-desktop prds get <repo-slug> <prd-slug>
+coolstory-desktop prds get <repo-slug> <prd-slug> --json
 ```
 
 ## Checkpoints
 
 ```bash
-coolstory-plugin checkpoints list <repo-slug>
-coolstory-plugin checkpoint "Title" --repo <repo-slug> [--branch <branch>] [--summary "..."] [--file path ...]
+coolstory-desktop checkpoints list <repo-slug>
+coolstory-desktop checkpoint "Title" --repo <repo-slug> [--branch <branch>] [--summary "..."] [--file path ...]
 ```
 
 If `--branch` is omitted, the plugin uses `COOLSTORY_BRANCH`, then falls back to `main`.
