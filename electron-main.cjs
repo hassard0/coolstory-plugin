@@ -65,14 +65,15 @@ async function runPackagedSmoke(url) {
     `);
     const bounds = mainWindow.getBounds();
     const missingIds = Object.entries(checks.ids).filter(([, exists]) => !exists).map(([id]) => id);
+    const bodyText = checks.bodyText.toLowerCase();
     const failures = [];
     if (mainWindow.getTitle() !== "CoolStory Desktop") failures.push("window title mismatch");
     if (!url.startsWith("http://127.0.0.1:")) failures.push("desktop did not load local server URL");
     if (bounds.width < 1100 || bounds.height < 720) failures.push("window opened below minimum landscape size");
     if (missingIds.length) failures.push(`missing DOM ids: ${missingIds.join(", ")}`);
-    if (!checks.bodyText.includes("Open browser sign-in")) failures.push("device auth action is missing");
-    if (!checks.bodyText.includes("Projects")) failures.push("project navigation is missing");
-    if (!checks.bodyText.includes("Artifact Types")) failures.push("artifact type navigation is missing");
+    if (!bodyText.includes("open browser sign-in")) failures.push("device auth action is missing");
+    if (!bodyText.includes("projects")) failures.push("project navigation is missing");
+    if (!bodyText.includes("artifact types")) failures.push("artifact type navigation is missing");
 
     const result = {
       ok: failures.length === 0,
