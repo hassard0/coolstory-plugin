@@ -21,6 +21,7 @@
   "scripts": {
     "smoke": "node src/index.js --help",
     "smoke:desktop": "node scripts/smoke/desktop-smoke.mjs",
+    "smoke:desktop:packaged": "node scripts/smoke/packaged-desktop-smoke.mjs",
     "start:desktop": "electron .",
     "build:bundle": "esbuild src/index.js --bundle --platform=node --format=cjs --outfile=dist/sea-entry.cjs",
     "build:binary": "npm run build:bundle && node scripts/build-sea.mjs",

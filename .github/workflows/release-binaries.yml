@@ -52,6 +52,9 @@ jobs:
       - name: Build desktop app
         run: npm run build:desktop -- ${{ matrix.target }}
 
+      - name: Packaged desktop smoke
+        run: npm run smoke:desktop:packaged
+
       - name: Upload workflow artifacts
         uses: actions/upload-artifact@v5
         with:

@@ -1,4 +1,5 @@
 const { app, BrowserWindow, shell } = require("electron");
+const fs = require("node:fs/promises");
 const { pathToFileURL } = require("node:url");
 const path = require("node:path");
 
@@ -34,6 +35,65 @@ async function createWindow() {
   });
 
   await mainWindow.loadURL(started.url);
+  if (process.env.COOLSTORY_DESKTOP_SMOKE === "1") {
+    await runPackagedSmoke(started.url);
+  }
+}
+
+async function runPackagedSmoke(url) {
+  try {
+    const checks = await mainWindow.webContents.executeJavaScript(`
+      (() => {
+        const ids = [
+          "toggleLeft",
+          "toggleRight",
+          "artifactTypeNav",
+          "sidebarArtifactNav",
+          "projectList",
+          "profileAvatars",
+          "artifactEditor",
+          "connectBtn"
+        ];
+        return {
+          readyState: document.readyState,
+          title: document.title,
+          bodyText: document.body.innerText,
+          ids: Object.fromEntries(ids.map((id) => [id, Boolean(document.getElementById(id))])),
+          appClasses: document.querySelector(".app")?.className || null
+        };
+      })()
+    `);
+    const bounds = mainWindow.getBounds();
+    const missingIds = Object.entries(checks.ids).filter(([, exists]) => !exists).map(([id]) => id);
+    const failures = [];
+    if (mainWindow.getTitle() !== "CoolStory Desktop") failures.push("window title mismatch");
+    if (!url.startsWith("http://127.0.0.1:")) failures.push("desktop did not load local server URL");
+    if (bounds.width < 1100 || bounds.height < 720) failures.push("window opened below minimum landscape size");
+    if (missingIds.length) failures.push(`missing DOM ids: ${missingIds.join(", ")}`);
+    if (!checks.bodyText.includes("Open browser sign-in")) failures.push("device auth action is missing");
+    if (!checks.bodyText.includes("Projects")) failures.push("project navigation is missing");
+    if (!checks.bodyText.includes("Artifact Types")) failures.push("artifact type navigation is missing");
+
+    const result = {
+      ok: failures.length === 0,
+      failures,
+      title: mainWindow.getTitle(),
+      url,
+      bounds,
+      dom: checks,
+    };
+    if (process.env.COOLSTORY_DESKTOP_SMOKE_OUT) {
+      await fs.writeFile(process.env.COOLSTORY_DESKTOP_SMOKE_OUT, JSON.stringify(result, null, 2));
+    }
+    server?.close();
+    app.exit(result.ok ? 0 : 1);
+  } catch (error) {
+    if (process.env.COOLSTORY_DESKTOP_SMOKE_OUT) {
+      await fs.writeFile(process.env.COOLSTORY_DESKTOP_SMOKE_OUT, JSON.stringify({ ok: false, error: error.message }, null, 2));
+    }
+    server?.close();
+    app.exit(1);
+  }
 }
 
 app.whenReady().then(createWindow);
