@@ -1,9 +1,18 @@
 # Command Reference
 
+## Headless CLI For BMAD
+
+```bash
+coolstory --help
+coolstory quickstart
+```
+
+`coolstory` is the canonical command for BMAD agents, automation, and terminal workflows.
+
 ## Desktop GUI
 
 ```bash
-coolstory-plugin
+coolstory-desktop
 coolstory-desktop gui
 ```
 
@@ -12,7 +21,7 @@ Launches the local desktop GUI. The packaged Windows and macOS builds open as na
 ## Auth
 
 ```bash
-coolstory-desktop auth login --token <token> [--api-url https://coolstory.dev]
+coolstory auth login --token <token> [--api-url https://coolstory.dev]
 ```
 
 Stores CoolStory API URL and token in `~/.coolstory/plugin.json`.
@@ -20,7 +29,7 @@ Stores CoolStory API URL and token in `~/.coolstory/plugin.json`.
 ## Status
 
 ```bash
-coolstory-desktop status
+coolstory status
 ```
 
 Shows configured API URL, token presence, and backend health.
@@ -28,7 +37,7 @@ Shows configured API URL, token presence, and backend health.
 ## Current User
 
 ```bash
-coolstory-desktop whoami
+coolstory whoami
 ```
 
 Shows the CoolStory profile attached to the configured token.
@@ -36,26 +45,26 @@ Shows the CoolStory profile attached to the configured token.
 ## Repositories
 
 ```bash
-coolstory-desktop repos list
-coolstory-desktop repos refs <repo-slug>
-coolstory-desktop repos archive <repo-slug> [output.tar] [--ref main]
+coolstory repos list
+coolstory repos refs <repo-slug>
+coolstory repos archive <repo-slug> [output.tar] [--ref main]
 ```
 
 ## Artifacts
 
 ```bash
-coolstory-desktop artifacts list <repo-slug>
-coolstory-desktop artifacts get <repo-slug> <artifact-slug>
-coolstory-desktop artifacts get <repo-slug> <artifact-slug> --json
+coolstory artifacts list <repo-slug>
+coolstory artifacts get <repo-slug> <artifact-slug>
+coolstory artifacts get <repo-slug> <artifact-slug> --json
 ```
 
-`coolstory-desktop prds ...` remains available as a compatibility alias for existing PRD-only workflows.
+`coolstory prds ...` remains available as a compatibility alias for existing PRD-only workflows.
 
 ## Checkpoints
 
 ```bash
-coolstory-desktop checkpoints list <repo-slug>
-coolstory-desktop checkpoint "Title" --repo <repo-slug> [--branch <branch>] [--summary "..."] [--file path ...]
+coolstory checkpoints list <repo-slug>
+coolstory checkpoint "Title" --repo <repo-slug> [--branch <branch>] [--summary "..."] [--file path ...]
 ```
 
 If `--branch` is omitted, the plugin uses `COOLSTORY_BRANCH`, then falls back to `main`.

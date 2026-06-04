@@ -11,7 +11,7 @@ npm install -g github:hassard0/coolstory-plugin
 Verify:
 
 ```bash
-coolstory-desktop --help
+coolstory --help
 ```
 
 ## 2. Create A Token
@@ -44,9 +44,9 @@ coolstory-desktop whoami
 ## 3. Find Your Work
 
 ```bash
-coolstory-desktop repos list
-coolstory-desktop artifacts list <repo-slug>
-coolstory-desktop artifacts get <repo-slug> <artifact-slug>
+coolstory repos list
+coolstory artifacts list <repo-slug>
+coolstory artifacts get <repo-slug> <artifact-slug>
 ```
 
 ## 4. Work In Git
@@ -60,7 +60,7 @@ git checkout -b feature/<short-name>
 ## 5. Send A Checkpoint Back
 
 ```bash
-coolstory-desktop checkpoint "Implemented first slice" \
+coolstory checkpoint "Implemented first slice" \
   --repo <repo-slug> \
   --branch feature/<short-name> \
   --summary "Implemented the initial behavior and added tests." \

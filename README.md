@@ -1,12 +1,12 @@
 # CoolStory Plugin
 
-Public CoolStory desktop client, agent integration, and CLI package.
+Public CoolStory CLI, agent integration, and desktop client package.
 
 This repository is intentionally separate from the private CoolStory product repository. Users, agents, customer environments, and BMAD workspaces should install this plugin instead of cloning the private app source.
 
 ## What This Does
 
-`coolstory-desktop` lets desktop users, agents, and local developer workflows:
+`coolstory` lets agents, BMAD workflows, desktop users, and local developer workflows:
 
 - authenticate to CoolStory through a browser-approved web session
 - launch a local desktop-style GUI for project and artifact context
@@ -27,10 +27,14 @@ npm install -g github:hassard0/coolstory-plugin
 Verify:
 
 ```bash
-coolstory-desktop --help
+coolstory --help
 ```
 
-The package also exposes `coolstory-plugin` and `coolstory` aliases, but docs use `coolstory-desktop` for the client command.
+The package exposes:
+
+- `coolstory`: canonical headless CLI for BMAD agents and automation.
+- `coolstory-desktop`: desktop GUI launcher and CLI-compatible alias.
+- `coolstory-plugin`: compatibility alias.
 
 Launch the desktop GUI:
 
@@ -64,7 +68,7 @@ Windows and macOS packages are built by GitHub Actions on native runners using E
 Recommended desktop flow:
 
 ```bash
-coolstory-plugin
+coolstory-desktop
 ```
 
 The app opens a local GUI and starts a secure browser approval flow at `https://coolstory.dev/app/connect`.
@@ -74,13 +78,13 @@ Agent and CI fallback:
 Create a personal access token in CoolStory, then store it locally:
 
 ```bash
-coolstory-desktop auth login --token cs_pat_xxxxxxxxxxxxxxxx
+coolstory auth login --token cs_pat_xxxxxxxxxxxxxxxx
 ```
 
 For a different environment:
 
 ```bash
-coolstory-desktop auth login --api-url https://coolstory.dev --token cs_pat_xxxxxxxxxxxxxxxx
+coolstory auth login --api-url https://coolstory.dev --token cs_pat_xxxxxxxxxxxxxxxx
 ```
 
 You can also avoid local storage and use environment variables:
@@ -93,12 +97,12 @@ export COOLSTORY_TOKEN=cs_pat_xxxxxxxxxxxxxxxx
 ## Quickstart
 
 ```bash
-coolstory-desktop quickstart
-coolstory-desktop whoami
-coolstory-desktop repos list
-coolstory-desktop artifacts list <repo-slug>
-coolstory-desktop artifacts get <repo-slug> <artifact-slug>
-coolstory-desktop checkpoint "Implemented artifact slice" --repo <repo-slug> --file <path>
+coolstory quickstart
+coolstory whoami
+coolstory repos list
+coolstory artifacts list <repo-slug>
+coolstory artifacts get <repo-slug> <artifact-slug>
+coolstory checkpoint "Implemented artifact slice" --repo <repo-slug> --file <path>
 ```
 
 ## Common Workflows
@@ -106,25 +110,25 @@ coolstory-desktop checkpoint "Implemented artifact slice" --repo <repo-slug> --f
 Inspect branch refs:
 
 ```bash
-coolstory-desktop repos refs my-project
+coolstory repos refs my-project
 ```
 
 Download a repository snapshot:
 
 ```bash
-coolstory-desktop repos archive my-project --ref main
+coolstory repos archive my-project --ref main
 ```
 
 Queue a checkpoint for the current branch:
 
 ```bash
-coolstory-desktop checkpoint "Agent implementation checkpoint" --repo my-project --branch feature/agent-work --file src/app.ts
+coolstory checkpoint "Agent implementation checkpoint" --repo my-project --branch feature/agent-work --file src/app.ts
 ```
 
 Fetch an artifact as JSON for custom tooling:
 
 ```bash
-coolstory-desktop artifacts get my-project launch-artifact --json
+coolstory artifacts get my-project launch-artifact --json
 ```
 
 ## BMAD Integration
@@ -136,9 +140,9 @@ Recommended agent loop:
 1. Discover the project and artifact:
 
    ```bash
-   coolstory-desktop repos list
-   coolstory-desktop artifacts list <repo-slug>
-   coolstory-desktop artifacts get <repo-slug> <artifact-slug>
+   coolstory repos list
+   coolstory artifacts list <repo-slug>
+   coolstory artifacts get <repo-slug> <artifact-slug>
    ```
 
 2. Load the artifact and project files into the BMAD agent context.
@@ -148,7 +152,7 @@ Recommended agent loop:
 4. Queue a checkpoint back to CoolStory:
 
    ```bash
-   coolstory-desktop checkpoint "BMAD dev agent checkpoint" --repo <repo-slug> --branch <branch> --file <changed-file>
+   coolstory checkpoint "BMAD dev agent checkpoint" --repo <repo-slug> --branch <branch> --file <changed-file>
    ```
 
 5. Review the branch, comments, checkpoint history, and pull request in CoolStory.

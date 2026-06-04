@@ -3,11 +3,11 @@ import { createServer } from "node:http";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { createWriteStream, existsSync } from "node:fs";
 import { homedir, hostname } from "node:os";
-import { dirname, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import { spawn } from "node:child_process";
 import { Writable } from "node:stream";
 
-const VERSION = "0.1.6";
+const VERSION = "0.1.7";
 const DEFAULT_API_URL = "https://coolstory.dev";
 const CONFIG_PATH = join(homedir(), ".coolstory", "plugin.json");
 
@@ -30,7 +30,9 @@ const commands = {
 
 async function main() {
   const [command, ...args] = process.argv.slice(2);
-  const handler = commands[command ?? "gui"];
+  const invokedAs = basename(process.argv[1] ?? "");
+  const defaultCommand = invokedAs === "coolstory" ? "--help" : "gui";
+  const handler = commands[command ?? defaultCommand];
   if (!handler) {
     throw new Error(`Unknown command: ${command}`);
   }
@@ -38,23 +40,25 @@ async function main() {
 }
 
 function help() {
-  console.log(`CoolStory desktop ${VERSION}
+  console.log(`CoolStory CLI ${VERSION}
 
 Usage:
-  coolstory-desktop auth login --token <token> [--api-url https://coolstory.dev]
-  coolstory-desktop status
-  coolstory-desktop whoami
-  coolstory-desktop repos list
-  coolstory-desktop repos refs <repo>
-  coolstory-desktop repos archive <repo> [output.tar] [--ref main]
-  coolstory-desktop artifacts list <repo>
-  coolstory-desktop artifacts get <repo> <artifact> [--json]
-  coolstory-desktop prds list <repo>                         # legacy alias
-  coolstory-desktop prds get <repo> <prd> [--json]            # legacy alias
-  coolstory-desktop checkpoints list <repo>
-  coolstory-desktop checkpoint <title> --repo <repo> [--summary "..."] [--file path ...]
+  coolstory auth login --token <token> [--api-url https://coolstory.dev]
+  coolstory status
+  coolstory whoami
+  coolstory repos list
+  coolstory repos refs <repo>
+  coolstory repos archive <repo> [output.tar] [--ref main]
+  coolstory artifacts list <repo>
+  coolstory artifacts get <repo> <artifact> [--json]
+  coolstory prds list <repo>                         # legacy alias
+  coolstory prds get <repo> <prd> [--json]            # legacy alias
+  coolstory checkpoints list <repo>
+  coolstory checkpoint <title> --repo <repo> [--summary "..."] [--file path ...]
+  coolstory quickstart
+
+Desktop GUI:
   coolstory-desktop gui
-  coolstory-desktop quickstart
 
 Environment:
   COOLSTORY_API_URL=https://coolstory.dev
@@ -68,7 +72,7 @@ function version() {
 async function auth(args) {
   const [subcommand, ...rest] = args;
   if (subcommand !== "login") {
-    throw new Error("Usage: coolstory-desktop auth login --token <token> [--api-url <url>]");
+    throw new Error("Usage: coolstory auth login --token <token> [--api-url <url>]");
   }
   const options = parseOptions(rest);
   if (!options.token) {
@@ -132,7 +136,7 @@ async function repos(args) {
     console.log(`Wrote ${target}`);
     return;
   }
-  throw new Error("Usage: coolstory-desktop repos <list|refs|archive>");
+  throw new Error("Usage: coolstory repos <list|refs|archive>");
 }
 
 async function prds(args) {
@@ -157,13 +161,13 @@ async function prds(args) {
     console.log(response.prd?.content ?? "");
     return;
   }
-  throw new Error("Usage: coolstory-desktop artifacts <list|get>");
+  throw new Error("Usage: coolstory artifacts <list|get>");
 }
 
 async function checkpoints(args) {
   const [subcommand, repo] = args;
   if (subcommand !== "list") {
-    throw new Error("Usage: coolstory-desktop checkpoints list <repo>");
+    throw new Error("Usage: coolstory checkpoints list <repo>");
   }
   requireValue(repo, "repo");
   const config = await requireAuth();
@@ -203,17 +207,17 @@ function quickstart() {
   console.log(`CoolStory agent quickstart
 
 1. Authenticate:
-   coolstory-desktop auth login --token cs_pat_xxxxxxxxxxxxxxxx
+   coolstory auth login --token cs_pat_xxxxxxxxxxxxxxxx
 
 2. Discover the project:
-   coolstory-desktop repos list
-   coolstory-desktop artifacts list <repo>
-   coolstory-desktop artifacts get <repo> <artifact>
+   coolstory repos list
+   coolstory artifacts list <repo>
+   coolstory artifacts get <repo> <artifact>
 
 3. Work from the artifact and cite files you changed.
 
 4. Queue a checkpoint:
-   coolstory-desktop checkpoint "Implemented artifact slice" --repo <repo> --file <path>
+   coolstory checkpoint "Implemented artifact slice" --repo <repo> --file <path>
 
 5. Open CoolStory to review branch history, comments, and PRs:
    https://coolstory.dev/app`);

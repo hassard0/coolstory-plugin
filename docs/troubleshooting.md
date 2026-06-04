@@ -29,8 +29,8 @@ coolstory-desktop whoami
 Check the repository slug and artifact slug:
 
 ```bash
-coolstory-desktop repos list
-coolstory-desktop artifacts list <repo-slug>
+coolstory repos list
+coolstory artifacts list <repo-slug>
 ```
 
 ## Cannot install from GitHub

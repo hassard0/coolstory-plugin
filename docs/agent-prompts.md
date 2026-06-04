@@ -26,10 +26,10 @@ Before finishing:
 Suggested command sequence:
 
 ```bash
-coolstory-desktop artifacts get <repo-slug> <artifact-slug>
+coolstory artifacts get <repo-slug> <artifact-slug>
 git checkout -b feature/<short-name>
 # agent edits files
-coolstory-desktop checkpoint "Implemented <slice>" --repo <repo-slug> --branch feature/<short-name> --file <path>
+coolstory checkpoint "Implemented <slice>" --repo <repo-slug> --branch feature/<short-name> --file <path>
 ```
 
 ## Reviewer Agent

@@ -27,7 +27,7 @@ Confirm the agent can see the current user and repos:
 
 ```bash
 coolstory-desktop whoami
-coolstory-desktop repos list
+coolstory repos list
 ```
 
 ## Recommended BMAD Agent Loop
@@ -35,9 +35,9 @@ coolstory-desktop repos list
 ### 1. Discover context
 
 ```bash
-coolstory-desktop repos list
-coolstory-desktop artifacts list <repo-slug>
-coolstory-desktop artifacts get <repo-slug> <artifact-slug>
+coolstory repos list
+coolstory artifacts list <repo-slug>
+coolstory artifacts get <repo-slug> <artifact-slug>
 ```
 
 Use the CoolStory artifact content as the primary product requirement input for the BMAD agent.
@@ -71,7 +71,7 @@ git checkout -b feature/<short-name>
 When the BMAD agent finishes a coherent slice:
 
 ```bash
-coolstory-desktop checkpoint "Implemented <feature>" \
+coolstory checkpoint "Implemented <feature>" \
   --repo <repo-slug> \
   --branch feature/<short-name> \
   --summary "What changed and why" \
@@ -104,7 +104,7 @@ For ephemeral agent containers:
 ```bash
 export COOLSTORY_API_URL=https://coolstory.dev
 export COOLSTORY_TOKEN=cs_pat_xxxxxxxxxxxxxxxx
-coolstory-desktop artifacts get <repo-slug> <artifact-slug>
+coolstory artifacts get <repo-slug> <artifact-slug>
 ```
 
 This avoids writing `~/.coolstory/plugin.json`.
