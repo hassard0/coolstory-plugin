@@ -31,6 +31,7 @@ Load project context:
 coolstory context <repo-slug>
 coolstory context <repo-slug> <artifact-slug>
 coolstory branches list <repo-slug> --json
+coolstory branches create <repo-slug> feature/<short-name> --from main
 coolstory clone <repo-slug> ./workspace --ref main
 coolstory artifacts pull <repo-slug> <artifact-slug> docs/artifact.md
 ```

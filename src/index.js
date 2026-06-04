@@ -8,7 +8,7 @@ import { spawn } from "node:child_process";
 import { Writable } from "node:stream";
 import { fileURLToPath } from "node:url";
 
-const VERSION = "0.1.12";
+const VERSION = "0.1.13";
 const DEFAULT_API_URL = "https://coolstory.dev";
 const CONFIG_PATH = join(homedir(), ".coolstory", "plugin.json");
 const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -59,6 +59,7 @@ Usage:
   coolstory repos clone <repo> [dir] [--ref main]
   coolstory clone <repo> [dir] [--ref main]
   coolstory branches list <repo> [--json]
+  coolstory branches create <repo> <branch> [--from main] [--json]
   coolstory artifacts list <repo>
   coolstory artifacts get <repo> <artifact> [--json]
   coolstory artifacts pull <repo> <artifact> [file.md] [--force]
@@ -171,25 +172,41 @@ async function clone(args) {
 }
 
 async function branches(args) {
-  const [subcommand, repo, ...rest] = args;
-  if (subcommand !== "list") {
-    throw new Error("Usage: coolstory branches list <repo> [--json]");
-  }
-  requireValue(repo, "repo");
-  const options = parseOptions(rest);
   const config = await requireAuth();
-  const response = await apiRequest(config, `/api/public/git/repos/${encodeURIComponent(repo)}/refs`);
-  if (options.json) {
-    console.log(JSON.stringify({
-      repo: response.repo,
-      branches: response.refs ?? [],
-    }, null, 2));
+  const [subcommand, repo, branch, ...rest] = args;
+  if (subcommand === "list") {
+    requireValue(repo, "repo");
+    const options = parseOptions([branch, ...rest].filter(Boolean));
+    const response = await apiRequest(config, `/api/public/git/repos/${encodeURIComponent(repo)}/refs`);
+    if (options.json) {
+      console.log(JSON.stringify({
+        repo: response.repo,
+        branches: response.refs ?? [],
+      }, null, 2));
+      return;
+    }
+    for (const ref of response.refs ?? []) {
+      const marker = ref.name === response.repo?.default_branch ? "*" : " ";
+      console.log(`${marker} ${ref.name} ${ref.sha.slice(0, 12)} ${ref.archive_url}`);
+    }
     return;
   }
-  for (const ref of response.refs ?? []) {
-    const marker = ref.name === response.repo?.default_branch ? "*" : " ";
-    console.log(`${marker} ${ref.name} ${ref.sha.slice(0, 12)} ${ref.archive_url}`);
+  if (subcommand === "create") {
+    requireValue(repo, "repo");
+    requireValue(branch, "branch");
+    const options = parseOptions(rest);
+    const response = await apiRequest(config, `/api/public/git/repos/${encodeURIComponent(repo)}/refs`, {
+      method: "POST",
+      body: JSON.stringify({ name: branch, from: options.from || "main" }),
+    });
+    if (options.json) {
+      console.log(JSON.stringify(response, null, 2));
+      return;
+    }
+    console.log(`Created branch ${response.ref?.name} at ${response.ref?.sha?.slice(0, 12)}`);
+    return;
   }
+  throw new Error("Usage: coolstory branches <list|create>");
 }
 
 async function prds(args) {

@@ -38,6 +38,7 @@ coolstory repos list
 coolstory repos list
 coolstory context <repo-slug>
 coolstory branches list <repo-slug> --json
+coolstory branches create <repo-slug> feature/<short-name> --from main
 coolstory clone <repo-slug> ./workspace --ref main
 coolstory artifacts list <repo-slug>
 coolstory artifacts get <repo-slug> <artifact-slug>
@@ -68,6 +69,12 @@ Use normal Git workflow:
 
 ```bash
 git checkout -b feature/<short-name>
+```
+
+If the branch should exist in CoolStory before artifact pushes or checkpoints, create it first:
+
+```bash
+coolstory branches create <repo-slug> feature/<short-name> --from main
 ```
 
 ### 4. Push artifact changes
