@@ -4,11 +4,12 @@ CoolStory collaboration is branch-backed.
 
 ## Artifact Work
 
-1. Read the PRD.
-2. Implement on a Git branch.
-3. Queue a checkpoint.
-4. Open a CoolStory pull request.
-5. Review comments, history, and branch comparison in the web app.
+1. Start the branch and artifact workspace with `coolstory bmad start`.
+2. Implement on the named Git branch.
+3. Sync Markdown artifact changes with `coolstory bmad sync`.
+4. Hand off changed files with `coolstory bmad handoff`.
+5. Open or review the CoolStory pull request.
+6. Review comments, history, merge preview, and branch comparison in the web app.
 
 ## Multiple Sessions
 
@@ -20,7 +21,7 @@ The web and desktop editors share the same server-backed edit stream:
 - the editor shows live/syncing/offline state
 - selected text can be anchored into review comments in the web app
 
-Agents should avoid long-running blind edits. Before queueing a checkpoint, refresh context and cite all changed files.
+Agents should avoid long-running blind edits. Before queueing a handoff, refresh context, sync any Markdown artifacts, and cite all changed files.
 
 ## Project Access
 

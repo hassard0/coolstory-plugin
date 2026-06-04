@@ -85,6 +85,20 @@ coolstory artifacts update <repo-slug> <file.md> [--title "..."] [--kind prd] [-
 
 `artifacts create` and `artifacts update` are explicit aliases for agent prompts that prefer intent-specific commands. The server still performs a safe upsert and reports whether the artifact was created or updated.
 
+## BMAD Session Commands
+
+```bash
+coolstory bmad start <repo-slug> [artifact-slug] [--branch feature/name] [--from main] [--dir ./workspace] [--pull docs/artifact.md] [--no-pull] [--force] [--json]
+coolstory bmad sync <repo-slug> <file.md> [--branch feature/name] [--kind prd] [--slug slug] [--title "..."] [--checkpoint "..."] [--summary "..."] [--json]
+coolstory bmad handoff <repo-slug> --branch feature/name --title "..." [--summary "..."] [--file path ...] [--artifact slug] [--pr-title "..."] [--target main] [--json]
+```
+
+`bmad start` creates or reuses a branch, optionally pulls an artifact to a local Markdown file, and optionally extracts a repo snapshot into a workspace.
+
+`bmad sync` is the preferred way for BMAD clients to materialize or update Markdown artifacts. It pushes the artifact content and queues a checkpoint carrying the same content so the web app can show it immediately.
+
+`bmad handoff` queues the implementation checkpoint for changed files. When `--artifact` and `--pr-title` are supplied, it also opens a CoolStory pull request for the artifact branch comparison.
+
 ## Context And Skills
 
 ```bash

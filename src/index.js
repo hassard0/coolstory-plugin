@@ -8,7 +8,7 @@ import { spawn } from "node:child_process";
 import { Writable } from "node:stream";
 import { fileURLToPath } from "node:url";
 
-const VERSION = "0.1.14";
+const VERSION = "0.1.15";
 const DEFAULT_API_URL = "https://coolstory.dev";
 const CONFIG_PATH = join(homedir(), ".coolstory", "plugin.json");
 const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -26,6 +26,7 @@ const commands = {
   "branches": branches,
   "pulls": pulls,
   "prs": pulls,
+  "bmad": bmad,
   "artifacts": prds,
   "prds": prds,
   "checkpoints": checkpoints,
@@ -64,6 +65,9 @@ Usage:
   coolstory branches create <repo> <branch> [--from main] [--json]
   coolstory pulls list <repo> [--json]
   coolstory pulls create <repo> --artifact <slug> --source <branch> [--target main] --title "..."
+  coolstory bmad start <repo> [artifact] [--branch feature/name] [--dir ./workspace] [--pull docs/artifact.md] [--json]
+  coolstory bmad sync <repo> <file.md> [--branch feature/name] [--kind prd] [--slug slug] [--json]
+  coolstory bmad handoff <repo> --branch feature/name --title "..." [--summary "..."] [--file path ...] [--artifact slug] [--pr-title "..."] [--json]
   coolstory artifacts list <repo>
   coolstory artifacts get <repo> <artifact> [--json]
   coolstory artifacts pull <repo> <artifact> [file.md] [--force]
@@ -330,6 +334,117 @@ async function pulls(args) {
   throw new Error("Usage: coolstory pulls <list|create>");
 }
 
+async function bmad(args) {
+  const [subcommand, repo, subject, ...rest] = args;
+  if (!["start", "sync", "handoff"].includes(subcommand)) {
+    throw new Error("Usage: coolstory bmad <start|sync|handoff>");
+  }
+  requireValue(repo, "repo");
+  const config = await requireAuth();
+
+  if (subcommand === "start") {
+    const artifactSlug = subject && !subject.startsWith("--") ? subject : null;
+    const optionArgs = artifactSlug ? rest : [subject, ...rest].filter(Boolean);
+    const options = parseOptions(optionArgs);
+    const branch = options.branch || process.env.COOLSTORY_BRANCH || `feature/bmad-${new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 12)}`;
+    const refsBody = await apiRequest(config, `/api/public/git/repos/${encodeURIComponent(repo)}/refs`);
+    const from = options.from || refsBody.repo?.default_branch || "main";
+    const refs = refsBody.refs ?? [];
+    let branchRef = refs.find((ref) => ref.name === branch) ?? null;
+    if (!branchRef) {
+      try {
+        const created = await apiRequest(config, `/api/public/git/repos/${encodeURIComponent(repo)}/refs`, {
+          method: "POST",
+          body: JSON.stringify({ name: branch, from }),
+        });
+        branchRef = created.ref;
+      } catch (error) {
+        if (!String(error.message).includes("409")) throw error;
+        const refreshed = await apiRequest(config, `/api/public/git/repos/${encodeURIComponent(repo)}/refs`);
+        branchRef = (refreshed.refs ?? []).find((ref) => ref.name === branch) ?? null;
+      }
+    }
+
+    let artifact = null;
+    let artifactFile = null;
+    if (artifactSlug) {
+      const detail = await apiRequest(config, `/api/public/cli/repos/${encodeURIComponent(repo)}/prds/${encodeURIComponent(artifactSlug)}`);
+      artifact = detail.prd ?? null;
+      if (options.pull !== false && !options["no-pull"]) {
+        artifactFile = typeof options.pull === "string" ? options.pull : join("docs", `${artifactSlug}.md`);
+        if (existsSync(artifactFile) && !options.force) {
+          throw new Error(`${artifactFile} already exists. Pass --force to overwrite it.`);
+        }
+        await mkdir(dirname(artifactFile), { recursive: true });
+        await writeFile(artifactFile, artifact?.content ?? "", "utf8");
+      }
+    }
+
+    if (options.dir) {
+      await cloneRepo(config, repo, [String(options.dir), "--ref", from]);
+    }
+
+    const output = {
+      repo,
+      branch,
+      branch_ref: branchRef,
+      artifact: artifact ? { slug: artifact.slug, title: artifact.title, kind: artifact.kind } : null,
+      artifact_file: artifactFile,
+      next: {
+        sync: artifactFile ? `coolstory bmad sync ${repo} ${artifactFile} --branch ${branch}` : `coolstory bmad sync ${repo} <artifact.md> --branch ${branch}`,
+        handoff: `coolstory bmad handoff ${repo} --branch ${branch} --title "Implemented <slice>" --file <changed-path>`,
+      },
+    };
+    printStructured(output, options.json);
+    return;
+  }
+
+  if (subcommand === "sync") {
+    requireValue(subject, "file.md");
+    const options = parseOptions(rest);
+    const branch = options.branch || process.env.COOLSTORY_BRANCH || "main";
+    const pushed = await pushArtifactFile(config, repo, subject, options, branch);
+    const checkpointTitle = options.checkpoint || `Synced ${pushed.artifact?.title || pushed.artifact?.slug || basename(subject)}`;
+    const checkpoint = await createCheckpointFromFiles(config, repo, {
+      title: checkpointTitle,
+      branch,
+      summary: options.summary || `Synced BMAD artifact ${pushed.artifact?.slug || subject}.`,
+      files: [subject],
+      artifactOptions: options,
+      useTitleForArtifact: true,
+    });
+    printStructured({ repo, branch, artifact: pushed.artifact, checkpoint: checkpoint.checkpoint, commit_sha: pushed.commit_sha }, options.json);
+    return;
+  }
+
+  const options = parseOptions([subject, ...rest].filter(Boolean));
+  const branch = options.branch || process.env.COOLSTORY_BRANCH;
+  requireValue(branch, "--branch");
+  requireValue(options.title, "--title");
+  const files = normalizeArray(options.file);
+  const checkpoint = await createCheckpointFromFiles(config, repo, {
+    title: options.title,
+    branch,
+    summary: options.summary || "",
+    files,
+    artifactOptions: options,
+  });
+  let pull = null;
+  if (options.artifact && (options["pr-title"] || options.pr)) {
+    pull = await apiRequest(config, `/api/public/cli/repos/${encodeURIComponent(repo)}/pulls`, {
+      method: "POST",
+      body: JSON.stringify({
+        artifact_slug: options.artifact,
+        source_branch: branch,
+        target_branch: options.target,
+        title: options["pr-title"] || options.title,
+        body: options["pr-body"] || options.summary || "",
+      }),
+    });
+  }
+  printStructured({ repo, branch, checkpoint: checkpoint.checkpoint, pull: pull?.pull ?? null }, options.json);
+}
+
 async function checkpoints(args) {
   const [subcommand, repo] = args;
   if (subcommand !== "list") {
@@ -360,7 +475,7 @@ async function checkpoint(args) {
   for (const file of files) {
     if (!/\.md$/i.test(file)) continue;
     const content = await readFile(file, "utf8");
-    const title = options.artifactTitle || inferMarkdownTitle(content, file);
+    const title = optionValue(options, "artifact-title", "artifactTitle") || inferMarkdownTitle(content, file);
     artifacts.push({
       path: file,
       title,
@@ -405,6 +520,69 @@ async function context(args) {
     body.artifact = detail.prd ?? null;
   }
   console.log(JSON.stringify(body, null, 2));
+}
+
+async function pushArtifactFile(config, repo, file, options, branch) {
+  const content = await readFile(file, "utf8");
+  const title = optionValue(options, "title", "artifact-title", "artifactTitle") || inferMarkdownTitle(content, file);
+  const slug = options.slug || slugify(title);
+  const kind = options.kind || inferArtifactKind(file);
+  const response = await apiRequest(config, `/api/public/cli/repos/${encodeURIComponent(repo)}/prds`, {
+    method: "POST",
+    body: JSON.stringify({
+      title,
+      slug,
+      kind,
+      branch_name: branch,
+      status: options.status || "draft",
+      content,
+    }),
+  });
+  return response;
+}
+
+async function createCheckpointFromFiles(config, repo, input) {
+  const artifacts = [];
+  for (const file of input.files) {
+    if (!/\.md$/i.test(file)) continue;
+    const content = await readFile(file, "utf8");
+    const title = optionValue(input.artifactOptions, "artifact-title", "artifactTitle")
+      || (input.useTitleForArtifact ? input.artifactOptions.title : undefined)
+      || inferMarkdownTitle(content, file);
+    artifacts.push({
+      path: file,
+      title,
+      slug: input.artifactOptions.slug || slugify(title),
+      kind: input.artifactOptions.kind || inferArtifactKind(file),
+      content,
+    });
+  }
+  return apiRequest(config, `/api/public/cli/repos/${encodeURIComponent(repo)}/checkpoints`, {
+    method: "POST",
+    body: JSON.stringify({
+      branch: input.branch,
+      title: input.title,
+      summary: input.summary,
+      files: input.files,
+      artifacts,
+    }),
+  });
+}
+
+function printStructured(data, asJson) {
+  if (asJson) {
+    console.log(JSON.stringify(data, null, 2));
+    return;
+  }
+  if (data.branch) console.log(`Branch: ${data.branch}`);
+  if (data.artifact) console.log(`Artifact: ${data.artifact.slug} (${data.artifact.kind || "artifact"})`);
+  if (data.artifact_file) console.log(`Artifact file: ${data.artifact_file}`);
+  if (data.checkpoint) console.log(`Checkpoint: ${data.checkpoint.id || data.checkpoint.title || "queued"}`);
+  if (data.pull) console.log(`Pull request: #${data.pull.number} ${data.pull.source_branch}->${data.pull.target_branch}`);
+  if (data.next) {
+    console.log("Next:");
+    for (const [name, command] of Object.entries(data.next)) console.log(`  ${name}: ${command}`);
+  }
 }
 
 async function skills() {
@@ -722,6 +900,13 @@ function normalizeArray(value) {
   return Array.isArray(value) ? value : [value];
 }
 
+function optionValue(options, ...names) {
+  for (const name of names) {
+    if (options[name] !== undefined) return options[name];
+  }
+  return undefined;
+}
+
 function requireValue(value, name) {
   if (!value) {
     throw new Error(`${name} is required`);
@@ -892,11 +1077,11 @@ function quickstartSteps() {
     },
     {
       title: "Pick a project",
-      body: "Load company projects, fetch artifact context, and clone a tenant-checked snapshot when the agent needs local source files.",
+      body: "Load company projects, start a BMAD branch, fetch artifact context, and clone a tenant-checked snapshot when the agent needs local source files.",
     },
     {
-      title: "Work branch-first",
-      body: "Have the agent implement against the PRD, then checkpoint files back to CoolStory for review.",
+      title: "Sync and hand off",
+      body: "Have the agent sync Markdown artifacts as they change, then hand off source changes back to CoolStory for review.",
     },
     {
       title: "Review in CoolStory",
@@ -912,11 +1097,9 @@ Use CoolStory as the source of truth for BMAD artifacts, branch context, checkpo
 
 1. Authenticate with \`coolstory auth login --token <token>\` or \`COOLSTORY_TOKEN\`.
 2. Load context with \`coolstory context <repo> [artifact]\`.
-3. Clone source snapshots with \`coolstory clone <repo> ./workspace --ref <branch>\` when source context is needed.
-4. Inspect branches with \`coolstory branches list <repo> --json\`.
-5. Read or pull artifacts with \`coolstory artifacts get <repo> <artifact>\` or \`coolstory artifacts pull <repo> <artifact>\`.
-6. Push created or rewritten Markdown artifacts with \`coolstory artifacts push <repo> <file.md> --kind <kind> --branch <branch>\`.
-7. Queue implementation checkpoints with \`coolstory checkpoint "Title" --repo <repo> --branch <branch> --file <path>\`.
+3. Start branch, artifact, and optional source context with \`coolstory bmad start <repo> [artifact] --branch <branch> --dir ./workspace\`.
+4. Sync created or rewritten Markdown artifacts with \`coolstory bmad sync <repo> <file.md> --kind <kind> --branch <branch>\`.
+5. Hand off implementation checkpoints with \`coolstory bmad handoff <repo> --branch <branch> --title "Title" --file <path>\`.
 `;
 }
 

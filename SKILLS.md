@@ -30,13 +30,12 @@ Load project context:
 ```bash
 coolstory context <repo-slug>
 coolstory context <repo-slug> <artifact-slug>
-coolstory branches list <repo-slug> --json
-coolstory branches create <repo-slug> feature/<short-name> --from main
-coolstory clone <repo-slug> ./workspace --ref main
-coolstory artifacts pull <repo-slug> <artifact-slug> docs/artifact.md
+coolstory bmad start <repo-slug> <artifact-slug> --branch feature/<short-name> --dir ./workspace
 ```
 
 Use `clone` when the BMAD client needs local project source context. It downloads a tenant-checked snapshot from CoolStory and extracts it into the target folder.
+
+Prefer `bmad start` over hand-assembling refs, clones, and artifact pulls. It prints the next `sync` and `handoff` commands for the agent.
 
 ## Artifact Workflow
 
@@ -56,8 +55,10 @@ coolstory artifacts get <repo-slug> <artifact-slug>
 Push a local BMAD Markdown artifact so it appears in CoolStory:
 
 ```bash
-coolstory artifacts push <repo-slug> <file.md> --kind prd --branch <branch>
+coolstory bmad sync <repo-slug> <file.md> --kind prd --branch <branch>
 ```
+
+Use `bmad sync` for first-time BMAD docs and updates. It creates or updates the artifact, attaches the Markdown content to the checkpoint, and does not require a human-supplied materialization ID.
 
 Use `--kind` values:
 
@@ -93,9 +94,9 @@ git checkout -b feature/<short-name>
 After a coherent slice, queue a checkpoint:
 
 ```bash
-coolstory checkpoint "Implemented <slice>" \
-  --repo <repo-slug> \
+coolstory bmad handoff <repo-slug> \
   --branch feature/<short-name> \
+  --title "Implemented <slice>" \
   --summary "What changed and why" \
   --file src/path-one.ts \
   --file src/path-two.ts

@@ -46,12 +46,8 @@ coolstory whoami
 ```bash
 coolstory repos list
 coolstory context <repo-slug>
-coolstory branches list <repo-slug> --json
-coolstory branches create <repo-slug> feature/<short-name> --from main
-coolstory clone <repo-slug> ./workspace --ref main
 coolstory artifacts list <repo-slug>
-coolstory artifacts get <repo-slug> <artifact-slug>
-coolstory artifacts pull <repo-slug> <artifact-slug> docs/artifact.md
+coolstory bmad start <repo-slug> <artifact-slug> --branch feature/<short-name> --dir ./workspace
 ```
 
 ## 4. Push New BMAD Artifacts
@@ -59,7 +55,7 @@ coolstory artifacts pull <repo-slug> <artifact-slug> docs/artifact.md
 If your agent creates a local Markdown artifact, push it into CoolStory before checkpointing:
 
 ```bash
-coolstory artifacts push <repo-slug> docs/my-artifact.md --kind prd --branch feature/<short-name>
+coolstory bmad sync <repo-slug> docs/my-artifact.md --kind prd --branch feature/<short-name>
 ```
 
 ## 5. Work In Git
@@ -73,9 +69,9 @@ git checkout -b feature/<short-name>
 ## 6. Send A Checkpoint Back
 
 ```bash
-coolstory checkpoint "Implemented first slice" \
-  --repo <repo-slug> \
+coolstory bmad handoff <repo-slug> \
   --branch feature/<short-name> \
+  --title "Implemented first slice" \
   --summary "Implemented the initial behavior and added tests." \
   --file src/example.ts
 ```

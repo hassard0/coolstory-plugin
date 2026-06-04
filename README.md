@@ -102,14 +102,10 @@ coolstory skills
 coolstory context <repo-slug> [artifact-slug]
 coolstory whoami
 coolstory repos list
-coolstory branches list <repo-slug> --json
-coolstory branches create <repo-slug> feature/my-work --from main
-coolstory clone <repo-slug> ./workspace
 coolstory artifacts list <repo-slug>
-coolstory artifacts get <repo-slug> <artifact-slug>
-coolstory artifacts pull <repo-slug> <artifact-slug> docs/artifact.md
-coolstory artifacts push <repo-slug> docs/my-bmad-artifact.md --kind prd --branch feature/my-work
-coolstory checkpoint "Implemented artifact slice" --repo <repo-slug> --file <path>
+coolstory bmad start <repo-slug> <artifact-slug> --branch feature/my-work --dir ./workspace
+coolstory bmad sync <repo-slug> docs/artifact.md --branch feature/my-work --kind prd
+coolstory bmad handoff <repo-slug> --branch feature/my-work --title "Implemented artifact slice" --file <path>
 ```
 
 ## Common Workflows
@@ -173,36 +169,31 @@ BMAD teams should treat CoolStory as the source of truth for product artifacts, 
 
 Recommended agent loop:
 
-1. Discover the project and artifact:
+1. Start a BMAD session:
 
    ```bash
-   coolstory context <repo-slug> <artifact-slug>
-   coolstory clone <repo-slug> ./workspace --ref main
-   coolstory repos list
-   coolstory branches list <repo-slug> --json
-   coolstory branches create <repo-slug> feature/<short-name> --from main
-   coolstory artifacts list <repo-slug>
-   coolstory artifacts get <repo-slug> <artifact-slug>
-   coolstory artifacts pull <repo-slug> <artifact-slug> docs/artifact.md
+   coolstory bmad start <repo-slug> <artifact-slug> --branch feature/<short-name> --dir ./workspace
    ```
+
+   This creates the working branch in CoolStory, pulls the artifact into `docs/<artifact-slug>.md`, and optionally extracts a tenant-checked repo snapshot into `./workspace`.
 
 2. Load the artifact and extracted project files into the BMAD agent context.
 
-3. Implement in a normal Git branch.
-
-4. If the agent creates or rewrites a Markdown artifact locally, push it back to CoolStory:
+3. Implement in a normal Git branch. When BMAD creates or rewrites a Markdown artifact locally, sync it back to CoolStory:
 
    ```bash
-   coolstory artifacts push <repo-slug> <artifact-file.md> --kind prd --branch <branch>
+   coolstory bmad sync <repo-slug> docs/<artifact>.md --branch feature/<short-name> --kind prd
    ```
 
-5. Queue a checkpoint back to CoolStory:
+   `sync` creates or updates the artifact and queues a checkpoint carrying the artifact content, so first-time BMAD docs appear in the web artifact list.
+
+4. Hand work back to CoolStory:
 
    ```bash
-   coolstory checkpoint "BMAD dev agent checkpoint" --repo <repo-slug> --branch <branch> --file <changed-file>
+   coolstory bmad handoff <repo-slug> --branch feature/<short-name> --title "Implemented <slice>" --file <changed-file>
    ```
 
-6. Review the branch, comments, checkpoint history, and pull request in CoolStory.
+5. Review the branch, comments, checkpoint history, merge preview, and pull request in CoolStory.
 
 Detailed guide: [docs/bmad.md](docs/bmad.md)
 

@@ -20,7 +20,8 @@ While coding:
 Before finishing:
 - summarize implementation and tradeoffs
 - list test results
-- queue a CoolStory checkpoint with changed files
+- sync any Markdown artifact edits with `coolstory bmad sync`
+- queue a CoolStory handoff with changed files
 ```
 
 Suggested command sequence:
@@ -28,14 +29,11 @@ Suggested command sequence:
 ```bash
 coolstory artifacts get <repo-slug> <artifact-slug>
 coolstory context <repo-slug> <artifact-slug>
-coolstory branches list <repo-slug> --json
-coolstory branches create <repo-slug> feature/<short-name> --from main
-coolstory clone <repo-slug> ./workspace --ref main
-coolstory artifacts pull <repo-slug> <artifact-slug> docs/artifact.md
+coolstory bmad start <repo-slug> <artifact-slug> --branch feature/<short-name> --dir ./workspace
 git checkout -b feature/<short-name>
 # agent edits files
-coolstory artifacts push <repo-slug> <artifact-file.md> --kind prd --branch feature/<short-name>
-coolstory checkpoint "Implemented <slice>" --repo <repo-slug> --branch feature/<short-name> --file <path>
+coolstory bmad sync <repo-slug> <artifact-file.md> --kind prd --branch feature/<short-name>
+coolstory bmad handoff <repo-slug> --branch feature/<short-name> --title "Implemented <slice>" --file <path>
 ```
 
 ## Reviewer Agent
