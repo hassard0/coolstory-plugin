@@ -31,6 +31,9 @@ async function main() {
     throw new Error(`Unknown command: ${command}`);
   }
   await handler(args);
+  if (!command && process.platform === "win32" && process.stdin.isTTY && process.stdout.isTTY) {
+    await waitForEnter();
+  }
 }
 
 function help() {
@@ -56,6 +59,12 @@ Environment:
 
 function version() {
   console.log(VERSION);
+}
+
+async function waitForEnter() {
+  console.log("\nPress Enter to exit.");
+  process.stdin.resume();
+  await new Promise((resolve) => process.stdin.once("data", resolve));
 }
 
 async function auth(args) {
