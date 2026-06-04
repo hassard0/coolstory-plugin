@@ -488,14 +488,14 @@ function openExternal(url) {
 
 function openAppWindow(url) {
   const launched = process.platform === "win32"
-    ? openWindowsAppWindow(url)
+    ? openWindowsBrowserWindow(url)
     : process.platform === "darwin"
-      ? openMacAppWindow(url)
-      : openLinuxAppWindow(url);
+      ? openMacBrowserWindow(url)
+      : openLinuxBrowserWindow(url);
   if (!launched) openExternal(url);
 }
 
-function openWindowsAppWindow(url) {
+function openWindowsBrowserWindow(url) {
   const local = process.env.LOCALAPPDATA ?? "";
   const programFiles = process.env.PROGRAMFILES ?? "C:\\Program Files";
   const programFilesX86 = process.env["PROGRAMFILES(X86)"] ?? "C:\\Program Files (x86)";
@@ -508,16 +508,16 @@ function openWindowsAppWindow(url) {
   ];
   for (const exe of candidates) {
     if (!exe || !existsSync(exe)) continue;
-    spawn(exe, [`--app=${url}`, "--new-window", "--window-size=1500,900", "--window-position=80,40"], { detached: true, stdio: "ignore", windowsHide: true }).unref();
+    spawn(exe, [url, "--new-window", "--window-size=1440,900", "--window-position=80,40"], { detached: true, stdio: "ignore", windowsHide: true }).unref();
     return true;
   }
   return false;
 }
 
-function openMacAppWindow(url) {
+function openMacBrowserWindow(url) {
   for (const app of ["Google Chrome", "Microsoft Edge"]) {
     if (!existsSync(`/Applications/${app}.app`) && !existsSync(join(homedir(), "Applications", `${app}.app`))) continue;
-    const child = spawn("open", ["-na", app, "--args", `--app=${url}`, "--window-size=1500,900"], { detached: true, stdio: "ignore", windowsHide: true });
+    const child = spawn("open", ["-na", app, "--args", "--new-window", url, "--window-size=1440,900"], { detached: true, stdio: "ignore", windowsHide: true });
     child.on("error", () => {});
     child.unref();
     return true;
@@ -525,10 +525,10 @@ function openMacAppWindow(url) {
   return false;
 }
 
-function openLinuxAppWindow(url) {
+function openLinuxBrowserWindow(url) {
   for (const command of ["google-chrome", "microsoft-edge", "chromium", "chromium-browser"]) {
     try {
-      const child = spawn(command, [`--app=${url}`, "--window-size=1500,900"], { detached: true, stdio: "ignore", windowsHide: true });
+      const child = spawn(command, ["--new-window", url, "--window-size=1440,900"], { detached: true, stdio: "ignore", windowsHide: true });
       child.on("error", () => {});
       child.unref();
       return true;
@@ -598,16 +598,16 @@ function desktopHtml() {
       font: 16px/1.45 ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
     }
     button, input, select { font: inherit; }
-    .stage { min-height: 100vh; padding: 24px 38px 28px; }
+    .stage { min-height: 100vh; padding: 0; }
     .app {
-      min-height: calc(100vh - 52px);
+      min-height: 100vh;
       overflow: hidden;
       display: grid;
-      grid-template-rows: 60px 1fr;
-      border: 1px solid var(--border-strong);
-      border-radius: 24px;
+      grid-template-rows: 56px 1fr;
+      border: 0;
+      border-radius: 0;
       background: var(--shell);
-      box-shadow: 0 22px 70px rgba(0,0,0,.55);
+      box-shadow: none;
     }
     .topbar {
       display: grid;
@@ -641,13 +641,15 @@ function desktopHtml() {
     .avatar.cyan { background: var(--cyan); }
     .avatar.yellow { background: var(--yellow); }
     .avatar.green { background: #3fc97f; }
-    .body { display: grid; grid-template-columns: 460px minmax(520px, 1fr) 462px; min-height: 0; }
+    .body { display: grid; grid-template-columns: clamp(220px, 19vw, 320px) minmax(0, 1fr) clamp(280px, 24vw, 380px); min-height: 0; }
     aside.sidebar {
       display: flex;
       flex-direction: column;
       border-right: 1px solid var(--border);
       background: #0e161a;
-      padding: 32px 24px;
+      padding: 20px 16px;
+      resize: horizontal;
+      overflow: auto;
     }
     nav { display: grid; gap: 4px; }
     nav button {
@@ -660,7 +662,7 @@ function desktopHtml() {
       text-align: left;
       padding: 10px 17px;
       cursor: pointer;
-      font-size: 20px;
+      font-size: 15px;
     }
     nav button.active, nav button:hover { background: #172027; color: #fff; }
     .sidebar-footer { margin-top: auto; display: grid; gap: 14px; align-items: start; }
@@ -668,27 +670,27 @@ function desktopHtml() {
     main {
       min-width: 0;
       overflow: auto;
-      padding: 34px 36px 44px;
+      padding: 28px 32px 40px;
       background: #0a1216;
     }
-    .workspace { max-width: 850px; }
+    .workspace { max-width: 1040px; }
     .rail {
       border-left: 1px solid var(--border);
       background: #111a20;
-      padding: 22px 24px;
+      padding: 20px;
       overflow: auto;
     }
     .rail-actions { display: flex; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 24px; }
     .doc-path { color: var(--muted); margin: 0 0 22px; }
     h1 {
       margin: 0 0 21px;
-      font: 44px/1.1 Georgia, "Times New Roman", serif;
+      font: 34px/1.15 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       letter-spacing: 0;
       color: #fff;
     }
     h2 { font-size: 18px; margin: 0 0 12px; color: #fff; }
     p { color: var(--muted); margin: 0 0 22px; }
-    .lede { max-width: 850px; font: 22px/1.55 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: var(--muted); }
+    .lede { max-width: 880px; font: 16px/1.55 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: var(--muted); }
     .inline-chip {
       display: inline-flex;
       align-items: center;
@@ -773,13 +775,12 @@ function desktopHtml() {
     .inspector-card .body-text { color: #fff; font: 14px/1.45 ui-sans-serif, system-ui, sans-serif; }
     .hide { display: none; }
     @media (max-width: 1260px) {
-      .stage { padding: 14px; }
       .body { grid-template-columns: 260px minmax(0, 1fr); }
       .rail { display: none; }
       nav button { font-size: 17px; }
     }
     @media (max-width: 760px) {
-      .topbar { grid-template-columns: 74px minmax(0, 1fr) 116px; padding: 0 14px; }
+      .topbar { grid-template-columns: minmax(0, 1fr) auto; padding: 0 14px; }
       .body { grid-template-columns: 1fr; }
       aside.sidebar { border-right: 0; border-bottom: 1px solid var(--border); padding: 18px; }
       nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -820,7 +821,7 @@ function desktopHtml() {
             <section id="home">
               <p class="doc-path" id="homePath">desktop/session</p>
               <h1 id="homeTitle">Connect CoolStory</h1>
-              <p class="lede" id="homeLead">Authenticate this desktop app, choose a company project, and load the artifacts your account is allowed to access.</p>
+              <p class="lede" id="homeLead">Authenticate in your browser, choose a company project, and load the artifacts your account is allowed to access.</p>
               <div class="checkpoint">
                 <div><strong id="workspaceStatus">+ waiting for authenticated workspace</strong></div>
                 <div id="workspaceDetail">No project is loaded in this desktop session yet.</div>
@@ -835,7 +836,7 @@ function desktopHtml() {
                   <h2>Session</h2>
                   <div id="sessionState" class="pill">Checking</div>
                   <p id="profileText" style="margin-top:12px"></p>
-                  <button class="primary" id="connectBtn">Connect CoolStory</button>
+                <button class="primary" id="connectBtn">Open browser sign-in</button>
                 </div>
                 <div class="card">
                   <h2>Agent Context</h2>
@@ -844,7 +845,7 @@ function desktopHtml() {
                 </div>
                 <div class="card wide hide" id="authPanel">
                   <h2>Approve Connection</h2>
-                  <p>Confirm this code in the CoolStory browser approval window.</p>
+                  <p>The browser approval page will connect this desktop session after you sign in.</p>
                   <div class="row">
                     <span class="pill mono" id="userCode"></span>
                     <span class="pill" id="authStatus">Waiting for approval</span>
@@ -918,12 +919,12 @@ function desktopHtml() {
             <section id="settings" class="hide">
               <p class="doc-path">desktop/settings.json</p>
               <h1>Settings</h1>
-              <p class="lede">Control the API endpoint and the local device session used by this app window.</p>
+              <p class="lede">Control the API endpoint and the local device session used by this browser-backed desktop companion.</p>
               <div class="card">
                 <label class="mono">API URL</label><br />
                 <input id="apiUrl" value="${DEFAULT_API_URL}" />
                 <div class="row" style="margin-top:12px">
-                  <button class="primary" id="connectBtn2">Connect CoolStory</button>
+                  <button class="primary" id="connectBtn2">Open browser sign-in</button>
                   <button class="danger" id="logoutBtn">Clear local session</button>
                 </div>
               </div>
@@ -982,7 +983,7 @@ function desktopHtml() {
       $("railState").textContent = state.status.authenticated ? "Synced" : "Local app";
       $("contextBranch").textContent = state.status.authenticated ? "session connected" : "connect a session";
       $("homeTitle").textContent = state.status.authenticated ? "Workspace Ready" : "Connect CoolStory";
-      $("homeLead").textContent = state.status.authenticated ? "Choose a repo to load project artifacts, branch context, checkpoints, and agent handoff data." : "Authenticate this desktop app, choose a company project, and load the artifacts your account is allowed to access.";
+      $("homeLead").textContent = state.status.authenticated ? "Choose a repo to load project artifacts, branch context, checkpoints, and agent handoff data." : "Authenticate in your browser, choose a company project, and load the artifacts your account is allowed to access.";
       $("workspaceStatus").textContent = state.status.authenticated ? "+ authenticated workspace ready" : "+ waiting for authenticated workspace";
       $("workspaceDetail").textContent = state.status.authenticated ? "No repo is selected yet." : "No project is loaded in this desktop session yet.";
       $("workspaceAction").textContent = state.status.authenticated ? "✦ Load repos to start agent work." : "✦ Connect, then load repos to start agent work.";
