@@ -7,7 +7,7 @@ import { dirname, join } from "node:path";
 import { spawn } from "node:child_process";
 import { Writable } from "node:stream";
 
-const VERSION = "0.1.0";
+const VERSION = "0.1.6";
 const DEFAULT_API_URL = "https://coolstory.dev";
 const CONFIG_PATH = join(homedir(), ".coolstory", "plugin.json");
 
