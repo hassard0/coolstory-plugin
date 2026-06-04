@@ -62,13 +62,13 @@ If `--branch` is omitted, the plugin uses `COOLSTORY_BRANCH`, then falls back to
 
 ```bash
 npm install
-npm run build:binary
+npm run build:desktop
 ```
 
 Outputs:
 
-- `dist/coolstory-desktop-win-x64.exe`
-- `dist/coolstory-desktop-macos-arm64`
-- `dist/coolstory-desktop-linux-x64`
+- `dist-electron/coolstory-desktop-win-x64.exe`
+- `dist-electron/coolstory-desktop-macos-arm64.zip`
+- `dist-electron/coolstory-desktop-linux-x64.AppImage`
 
-Windows and macOS binaries are built by the `Release Binaries` GitHub Actions workflow on native runners using Node SEA. Source installs still require Node.js 20 or newer.
+Windows and macOS packages are built by the `Release Binaries` GitHub Actions workflow on native runners using Electron. Source installs still require Node.js 20 or newer.

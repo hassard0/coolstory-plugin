@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "Public CoolStory agent and CLI integration plugin.",
   "type": "module",
+  "main": "electron-main.cjs",
   "bin": {
     "coolstory-desktop": "src/index.js",
     "coolstory-plugin": "src/index.js",
@@ -19,9 +20,56 @@
   ],
   "scripts": {
     "smoke": "node src/index.js --help",
+    "start:desktop": "electron .",
     "build:bundle": "esbuild src/index.js --bundle --platform=node --format=cjs --outfile=dist/sea-entry.cjs",
     "build:binary": "npm run build:bundle && node scripts/build-sea.mjs",
-    "build:binaries": "npm run build:binary"
+    "build:binaries": "npm run build:binary",
+    "build:desktop": "electron-builder --publish never"
+  },
+  "build": {
+    "appId": "dev.coolstory.desktop",
+    "productName": "CoolStory Desktop",
+    "files": [
+      "electron-main.cjs",
+      "src/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist-electron"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "coolstory-desktop-win-x64.exe"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "zip",
+          "arch": [
+            "arm64"
+          ]
+        }
+      ],
+      "artifactName": "coolstory-desktop-macos-arm64.zip"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "coolstory-desktop-linux-x64.AppImage"
+    }
   },
   "keywords": [
     "coolstory",
@@ -33,6 +81,8 @@
   ],
   "license": "MIT",
   "devDependencies": {
+    "electron": "^31.7.7",
+    "electron-builder": "^24.13.3",
     "esbuild": "^0.27.0",
     "postject": "^1.0.0-alpha.6"
   }

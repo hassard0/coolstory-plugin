@@ -38,26 +38,26 @@ Launch the desktop GUI:
 coolstory-desktop
 ```
 
-The client opens a local GUI in your browser. Click **Connect with browser** to approve the device-code request inside your authenticated CoolStory web session. After approval, the client stores the generated CoolStory token locally.
+The desktop package opens a CoolStory app window. Click **Open browser sign-in** to approve the device-code request inside your authenticated CoolStory web session. After approval, the app stores the generated CoolStory token locally.
 
 ## Standalone Binaries
 
-Release builds publish standalone binaries for:
+Release builds publish desktop app packages for:
 
 - Windows x64: `coolstory-desktop-win-x64.exe`
-- macOS Apple Silicon: `coolstory-desktop-macos-arm64`
-- Linux x64: `coolstory-desktop-linux-x64`
+- macOS Apple Silicon: `coolstory-desktop-macos-arm64.zip`
+- Linux x64: `coolstory-desktop-linux-x64.AppImage`
 
 Build locally from this repository:
 
 ```bash
 npm install
-npm run build:binary
+npm run build:desktop
 ```
 
-The generated executable is written to `dist/`.
+The generated desktop package is written to `dist-electron/`.
 
-Windows and macOS binaries are built by GitHub Actions on native runners using Node SEA. Source installs still require Node.js 20 or newer. Run the `Release Binaries` workflow or push a `v*` tag.
+Windows and macOS packages are built by GitHub Actions on native runners using Electron. Source installs still require Node.js 20 or newer. Run the `Release Binaries` workflow or push a `v*` tag.
 
 ## Connect
 

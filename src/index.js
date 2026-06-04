@@ -228,6 +228,12 @@ async function gui() {
     return;
   }
 
+  const { url } = await startDesktopServer();
+  console.log(`CoolStory desktop client is running at ${url}`);
+  openAppWindow(url);
+}
+
+export async function startDesktopServer() {
   const server = createServer(async (req, res) => {
     try {
       const url = new URL(req.url ?? "/", "http://127.0.0.1");
@@ -360,8 +366,7 @@ async function gui() {
   const address = server.address();
   const port = typeof address === "object" && address ? address.port : 0;
   const url = `http://127.0.0.1:${port}/`;
-  console.log(`CoolStory desktop client is running at ${url}`);
-  openAppWindow(url);
+  return { server, url };
 }
 
 async function requireAuth() {
