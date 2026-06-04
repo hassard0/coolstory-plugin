@@ -510,7 +510,7 @@ function quickstartSteps() {
   ];
 }
 
-function desktopHtml() {
+function desktopHtmlLegacy() {
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -696,6 +696,490 @@ function desktopHtml() {
       $("sessionState").textContent = state.status.authenticated ? "Connected" : "Not connected";
       $("sessionState").className = "pill " + (state.status.authenticated ? "ok" : "warn");
       $("profileText").textContent = state.status.authenticated ? (state.status.profile?.display_name || "CoolStory user") : "Connect through your CoolStory web session.";
+    }
+    async function startAuth() {
+      $("authPanel").classList.remove("hide");
+      $("authStatus").textContent = "Opening browser approval";
+      const started = await api("/api/auth/start", { method: "POST", body: JSON.stringify({ apiUrl: $("apiUrl").value }) });
+      $("userCode").textContent = started.user_code;
+      $("authStatus").textContent = "Waiting for approval";
+      clearInterval(state.pollTimer);
+      state.pollTimer = setInterval(() => pollAuth(started.device_code), Math.max(2, started.interval || 5) * 1000);
+      pollAuth(started.device_code);
+    }
+    async function pollAuth(deviceCode) {
+      try {
+        const result = await api("/api/auth/poll", { method: "POST", body: JSON.stringify({ device_code: deviceCode }) });
+        if (result.access_token) {
+          clearInterval(state.pollTimer);
+          $("authStatus").textContent = "Connected";
+          await refreshStatus();
+        }
+      } catch (error) {
+        if (!String(error.message).includes("authorization_pending")) {
+          $("authStatus").textContent = error.message;
+        }
+      }
+    }
+    async function logout() {
+      await api("/api/logout", { method: "POST", body: "{}" });
+      await refreshStatus();
+    }
+    async function loadProjects() {
+      const data = await api("/api/repos");
+      const repos = data.repos || [];
+      $("projectList").innerHTML = repos.map((repo) => '<div class="item" data-repo="' + escapeHtml(repo.slug) + '"><strong>' + escapeHtml(repo.name) + '</strong><div class="mono">' + escapeHtml(repo.slug) + ' · ' + escapeHtml(repo.default_branch) + '</div></div>').join("") || '<p>No projects found.</p>';
+      $("projectSelect").innerHTML = repos.map((repo) => '<option value="' + escapeHtml(repo.slug) + '">' + escapeHtml(repo.name) + '</option>').join("");
+      document.querySelectorAll("[data-repo]").forEach((el) => el.addEventListener("click", () => { $("projectSelect").value = el.dataset.repo; loadPrds(el.dataset.repo); }));
+    }
+    async function loadPrds(repo) {
+      if (!repo) return;
+      const data = await api("/api/prds?repo=" + encodeURIComponent(repo));
+      const prds = data.prds || [];
+      $("prdList").innerHTML = prds.map((prd) => '<div class="item"><strong>' + escapeHtml(prd.title) + '</strong><div class="mono">' + escapeHtml(prd.slug) + ' · ' + escapeHtml(prd.status) + ' · ' + escapeHtml(prd.branch_name) + '</div></div>').join("") || '<p>No artifacts found.</p>';
+    }
+    async function loadQuickstart() {
+      const data = await api("/api/quickstart");
+      $("quickstartList").innerHTML = data.steps.map((step, i) => '<div class="card"><span class="pill">Step ' + (i + 1) + '</span><h2 style="margin-top:10px">' + escapeHtml(step.title) + '</h2><p>' + escapeHtml(step.body) + '</p></div>').join("");
+    }
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
+    }
+    refreshStatus().catch((error) => { $("sidebarStatus").textContent = error.message; });
+  </script>
+</body>
+</html>`;
+}
+
+function desktopHtml() {
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CoolStory Desktop</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #03090b;
+      --shell: #0d1519;
+      --panel: #111a20;
+      --panel-2: #172129;
+      --panel-3: #0a1115;
+      --border: #26333c;
+      --border-strong: #46545f;
+      --text: #f5f8fb;
+      --muted: #a8b8cc;
+      --muted-2: #7890a8;
+      --yellow: #ffcc00;
+      --green: #35d889;
+      --cyan: #18c5d8;
+      --danger: #ff6b7f;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px),
+        var(--bg);
+      background-size: 64px 64px;
+      color: var(--text);
+      font: 16px/1.45 ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+    }
+    button, input, select { font: inherit; }
+    .stage { min-height: 100vh; padding: 24px 38px 28px; }
+    .app {
+      min-height: calc(100vh - 52px);
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: 60px 1fr;
+      border: 1px solid var(--border-strong);
+      border-radius: 24px;
+      background: var(--shell);
+      box-shadow: 0 22px 70px rgba(0,0,0,.55);
+    }
+    .topbar {
+      display: grid;
+      grid-template-columns: 190px minmax(0, 1fr) 210px;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      background: #121b21;
+      padding: 0 24px;
+    }
+    .traffic { display: flex; align-items: center; gap: 11px; }
+    .dot { width: 15px; height: 15px; border-radius: 50%; display: inline-block; }
+    .dot.red { background: #d94f45; }
+    .dot.amber { background: #c9893d; }
+    .dot.green { background: #43b776; }
+    .repo-title {
+      justify-self: center;
+      min-width: 0;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      letter-spacing: 0;
+    }
+    .repo-title strong { color: var(--yellow); font-weight: 800; }
+    .branch-icon { color: var(--muted-2); margin-right: 10px; }
+    .avatars { display: flex; justify-content: flex-end; align-items: center; }
+    .avatar {
+      width: 38px;
+      height: 38px;
+      margin-left: -6px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      color: #071015;
+      font: 700 13px/1 ui-sans-serif, system-ui, sans-serif;
+    }
+    .avatar.cyan { background: var(--cyan); }
+    .avatar.yellow { background: var(--yellow); }
+    .avatar.green { background: #3fc97f; }
+    .body { display: grid; grid-template-columns: 460px minmax(520px, 1fr) 462px; min-height: 0; }
+    aside.sidebar {
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid var(--border);
+      background: #0e161a;
+      padding: 32px 24px;
+    }
+    nav { display: grid; gap: 4px; }
+    nav button {
+      width: 100%;
+      min-height: 46px;
+      border: 0;
+      border-radius: 7px;
+      background: transparent;
+      color: var(--muted);
+      text-align: left;
+      padding: 10px 17px;
+      cursor: pointer;
+      font-size: 20px;
+    }
+    nav button.active, nav button:hover { background: #172027; color: #fff; }
+    .sidebar-footer { margin-top: auto; display: grid; gap: 14px; align-items: start; }
+    .status { max-width: 100%; color: var(--muted); font-size: 13px; }
+    main {
+      min-width: 0;
+      overflow: auto;
+      padding: 34px 36px 44px;
+      background: #0a1216;
+    }
+    .workspace { max-width: 850px; }
+    .rail {
+      border-left: 1px solid var(--border);
+      background: #111a20;
+      padding: 22px 24px;
+      overflow: auto;
+    }
+    .rail-actions { display: flex; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+    .doc-path { color: var(--muted); margin: 0 0 22px; }
+    h1 {
+      margin: 0 0 21px;
+      font: 44px/1.1 Georgia, "Times New Roman", serif;
+      letter-spacing: 0;
+      color: #fff;
+    }
+    h2 { font-size: 18px; margin: 0 0 12px; color: #fff; }
+    p { color: var(--muted); margin: 0 0 22px; }
+    .lede { max-width: 850px; font: 22px/1.55 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: var(--muted); }
+    .inline-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 0 7px 2px;
+      border-radius: 6px;
+      color: #fff;
+      font-weight: 800;
+      line-height: 1.15;
+    }
+    .inline-chip.gold { background: rgba(255,204,0,.27); }
+    .inline-chip.green { background: rgba(53,216,137,.32); }
+    .checkpoint {
+      margin: 28px 0 30px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #0c1216;
+      padding: 20px;
+      color: var(--muted);
+      font-size: 18px;
+    }
+    .checkpoint strong { color: #24ef8d; font-weight: 700; }
+    .checkpoint .ai { color: var(--yellow); font-weight: 800; }
+    .actions, .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .hero-actions { margin-bottom: 30px; }
+    input, select {
+      background: var(--panel-3);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 10px 11px;
+      min-width: 260px;
+    }
+    button.primary, button.secondary, button.danger {
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 11px 18px;
+      color: var(--text);
+      cursor: pointer;
+    }
+    button.primary { background: var(--yellow); color: #080b0d; border-color: var(--yellow); font-weight: 800; }
+    button.secondary { background: var(--panel-2); }
+    button.danger { background: transparent; color: var(--danger); }
+    button:disabled { opacity: .55; cursor: not-allowed; }
+    .pill {
+      display: inline-flex;
+      max-width: 100%;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 12px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: 14px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .ok { color: var(--green); }
+    .warn { color: var(--yellow); }
+    .panel-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 24px; }
+    .card { border: 1px solid var(--border); background: var(--panel); border-radius: 8px; padding: 16px; }
+    .wide { grid-column: 1 / -1; }
+    .list { display: grid; gap: 8px; }
+    .item { border: 1px solid var(--border); border-radius: 8px; padding: 12px; background: #12151a; cursor: pointer; }
+    .item:hover { border-color: var(--yellow); }
+    .mono { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; color: var(--muted); }
+    .comment { position: relative; padding: 4px 0 14px 20px; margin-bottom: 14px; }
+    .comment:before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 10px;
+      width: 3px;
+      background: var(--muted-2);
+    }
+    .comment.yellow:before { background: var(--yellow); }
+    .comment.green:before { background: var(--green); }
+    .comment.gray:before { background: var(--muted-2); }
+    .comment .meta { color: var(--muted); margin-bottom: 4px; }
+    .comment .body-text {
+      font: 21px/1.28 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #fff;
+      font-weight: 650;
+    }
+    .hide { display: none; }
+    @media (max-width: 1260px) {
+      .stage { padding: 14px; }
+      .body { grid-template-columns: 260px minmax(0, 1fr); }
+      .rail { display: none; }
+      nav button { font-size: 17px; }
+    }
+    @media (max-width: 760px) {
+      .topbar { grid-template-columns: 74px minmax(0, 1fr) 116px; padding: 0 14px; }
+      .body { grid-template-columns: 1fr; }
+      aside.sidebar { border-right: 0; border-bottom: 1px solid var(--border); padding: 18px; }
+      nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      main { padding: 24px 18px; }
+      h1 { font-size: 34px; }
+      .lede { font-size: 19px; }
+      .panel-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="app">
+      <header class="topbar">
+        <div class="traffic" aria-hidden="true">
+          <span class="dot red"></span>
+          <span class="dot amber"></span>
+          <span class="dot green"></span>
+        </div>
+        <div class="repo-title"><span class="branch-icon">⌘</span> coolstory/web · <strong>feature/onboarding-v2</strong></div>
+        <div class="avatars" aria-label="Active collaborators">
+          <span class="avatar cyan">JY</span>
+          <span class="avatar yellow">AL</span>
+          <span class="avatar green">RK</span>
+        </div>
+      </header>
+      <div class="body">
+        <aside class="sidebar">
+          <nav>
+            <button data-view="projects">Repos</button>
+            <button data-view="home" class="active">PRDs</button>
+            <button data-view="architecture">Architecture</button>
+            <button data-view="designs">Designs</button>
+            <button data-view="pulls">Pull requests</button>
+            <button data-view="decisions">Decisions</button>
+            <button data-view="ci">CI</button>
+            <button data-view="quickstart">Quickstart</button>
+            <button data-view="settings">Settings</button>
+          </nav>
+          <div class="sidebar-footer">
+            <span class="pill">BMAD · planning</span>
+            <div class="status" id="sidebarStatus">Checking session...</div>
+          </div>
+        </aside>
+        <main>
+          <div class="workspace">
+            <section id="home">
+              <p class="doc-path">prd/onboarding-v2.md</p>
+              <h1>Onboarding v2</h1>
+              <p class="lede">We reduce time-to-first-checkpoint from <span class="inline-chip gold">14 minutes</span> to under <span class="inline-chip green">90 seconds</span> by collapsing repo setup, role detection, and BMAD context priming into a single guided session...</p>
+              <div class="checkpoint">
+                <div><strong>+ checkpoint to feature/onboarding-v2</strong></div>
+                <div>3 files · 142 ops merged from 3 collaborators</div>
+                <div class="ai">✦ AI: ready to propose PR - no conflicts detected</div>
+              </div>
+              <div class="actions hero-actions">
+                <button class="primary" data-jump="projects">Checkpoint to branch</button>
+                <button class="secondary" data-jump="quickstart">Suggest mode</button>
+              </div>
+              <div class="panel-grid">
+                <div class="card">
+                  <h2>Session</h2>
+                  <div id="sessionState" class="pill">Checking</div>
+                  <p id="profileText" style="margin-top:12px"></p>
+                  <button class="primary" id="connectBtn">Connect CoolStory</button>
+                </div>
+                <div class="card">
+                  <h2>Agent Context</h2>
+                  <p>Browse company-scoped projects, artifacts, checkpoints, and branch guidance from the authenticated CoolStory API.</p>
+                  <button class="secondary" data-jump="projects">Open repos</button>
+                </div>
+                <div class="card wide hide" id="authPanel">
+                  <h2>Approve Connection</h2>
+                  <p>Confirm this code in the CoolStory browser approval window.</p>
+                  <div class="row">
+                    <span class="pill mono" id="userCode"></span>
+                    <span class="pill" id="authStatus">Waiting for approval</span>
+                  </div>
+                </div>
+              </div>
+            </section>
+            <section id="projects" class="hide">
+              <p class="doc-path">repos/company-scope</p>
+              <h1>Repos</h1>
+              <p class="lede">Load only the projects your Auth0 organization and CoolStory permissions allow this desktop client to see.</p>
+              <div class="row" style="margin-bottom:14px">
+                <button class="primary" id="loadProjects">Load repos</button>
+                <select id="projectSelect"></select>
+                <button class="secondary" id="loadPrds">Load artifacts</button>
+              </div>
+              <div class="panel-grid">
+                <div class="card">
+                  <h2>Project List</h2>
+                  <div id="projectList" class="list"></div>
+                </div>
+                <div class="card">
+                  <h2>Artifacts</h2>
+                  <div id="prdList" class="list"></div>
+                </div>
+              </div>
+            </section>
+            <section id="quickstart" class="hide">
+              <p class="doc-path">agent/quickstart.md</p>
+              <h1>Quickstart</h1>
+              <p class="lede">Common ways to use CoolStory with an agent, from PRD capture to checkpoint review and branch handoff.</p>
+              <div id="quickstartList" class="list"></div>
+            </section>
+            <section id="settings" class="hide">
+              <p class="doc-path">desktop/settings.json</p>
+              <h1>Settings</h1>
+              <p class="lede">Control the API endpoint and the local device session used by this app window.</p>
+              <div class="card">
+                <label class="mono">API URL</label><br />
+                <input id="apiUrl" value="${DEFAULT_API_URL}" />
+                <div class="row" style="margin-top:12px">
+                  <button class="primary" id="connectBtn2">Connect CoolStory</button>
+                  <button class="danger" id="logoutBtn">Clear local session</button>
+                </div>
+              </div>
+            </section>
+            <section id="architecture" class="hide">
+              <p class="doc-path">architecture/system.md</p>
+              <h1>Architecture</h1>
+              <p class="lede">Company isolation, Auth0 Organizations, OpenFGA checks, Git storage, and agent handoff notes stay visible beside the work.</p>
+              <div class="checkpoint"><strong>+ secure boundary</strong><div>Auth0 org membership · OpenFGA relation checks · project-scoped Git permissions</div></div>
+            </section>
+            <section id="designs" class="hide">
+              <p class="doc-path">design/product-shell.md</p>
+              <h1>Designs</h1>
+              <p class="lede">The local client mirrors the web workspace, so authentication and agent work feel like one CoolStory surface.</p>
+            </section>
+            <section id="pulls" class="hide">
+              <p class="doc-path">git/pull-requests</p>
+              <h1>Pull requests</h1>
+              <p class="lede">Checkpoint changes to a branch, compare against main, and prepare handoff notes for review.</p>
+            </section>
+            <section id="decisions" class="hide">
+              <p class="doc-path">decisions/index.md</p>
+              <h1>Decisions</h1>
+              <p class="lede">Capture product and engineering calls where the team can tie them back to artifacts, checkpoints, and branches.</p>
+            </section>
+            <section id="ci" class="hide">
+              <p class="doc-path">ci/status</p>
+              <h1>CI</h1>
+              <p class="lede">Show branch protections, test results, and deploy readiness before a PR is proposed.</p>
+              <div class="checkpoint"><strong>+ branch protections pass</strong><div>3/3 checks green · no conflicts detected · ready for review</div></div>
+            </section>
+          </div>
+        </main>
+        <aside class="rail">
+          <div class="rail-actions">
+            <span class="pill" id="railState">Local app</span>
+            <button class="secondary" data-jump="settings">Auth</button>
+          </div>
+          <div class="comment yellow">
+            <div class="meta">Amelia · Design</div>
+            <div class="body-text">Hooked the empty state to the BMAD persona - should we A/B the 90s claim?</div>
+          </div>
+          <div class="comment green">
+            <div class="meta">Ravi · Eng</div>
+            <div class="body-text">Branch protections pass. CI green on 3/3 checks.</div>
+          </div>
+          <div class="comment gray">
+            <div class="meta">Jules · PM</div>
+            <div class="body-text">Linked to LIN-482. Decision logged.</div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+  <script>
+    const state = { status: null, pollTimer: null };
+    const $ = (id) => document.getElementById(id);
+    document.querySelectorAll("nav button").forEach((button) => button.addEventListener("click", () => show(button.dataset.view)));
+    document.querySelectorAll("[data-jump]").forEach((button) => button.addEventListener("click", () => show(button.dataset.jump)));
+    $("connectBtn").addEventListener("click", startAuth);
+    $("connectBtn2").addEventListener("click", startAuth);
+    $("logoutBtn").addEventListener("click", logout);
+    $("loadProjects").addEventListener("click", loadProjects);
+    $("loadPrds").addEventListener("click", () => loadPrds($("projectSelect").value));
+
+    function show(view) {
+      document.querySelectorAll("main section").forEach((section) => section.classList.toggle("hide", section.id !== view));
+      document.querySelectorAll("nav button").forEach((button) => button.classList.toggle("active", button.dataset.view === view));
+      if (view === "quickstart") loadQuickstart();
+    }
+    async function api(path, options = {}) {
+      const response = await fetch(path, { headers: { "content-type": "application/json" }, ...options });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error || "Request failed");
+      return body;
+    }
+    async function refreshStatus() {
+      state.status = await api("/api/status");
+      $("apiUrl").value = state.status.apiUrl || "${DEFAULT_API_URL}";
+      $("sidebarStatus").innerHTML = state.status.authenticated ? '<span class="ok">Connected</span><br>' + escapeHtml(state.status.profile?.display_name || "CoolStory user") : '<span class="warn">Not connected</span>';
+      $("sessionState").textContent = state.status.authenticated ? "Connected" : "Not connected";
+      $("sessionState").className = "pill " + (state.status.authenticated ? "ok" : "warn");
+      $("profileText").textContent = state.status.authenticated ? (state.status.profile?.display_name || "CoolStory user") : "Connect through your CoolStory web session.";
+      $("railState").textContent = state.status.authenticated ? "Synced" : "Local app";
     }
     async function startAuth() {
       $("authPanel").classList.remove("hide");
