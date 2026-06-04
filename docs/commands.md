@@ -59,7 +59,6 @@ npm run build:binary
 Outputs:
 
 - `dist/coolstory-plugin-win-x64.exe`
-- `dist/coolstory-plugin-macos-x64`
 - `dist/coolstory-plugin-macos-arm64`
 - `dist/coolstory-plugin-linux-x64`
 

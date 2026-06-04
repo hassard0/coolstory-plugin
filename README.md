@@ -37,7 +37,6 @@ Release builds publish standalone binaries for:
 
 - Windows x64: `coolstory-plugin-win-x64.exe`
 - macOS Apple Silicon: `coolstory-plugin-macos-arm64`
-- macOS Intel: `coolstory-plugin-macos-x64`
 - Linux x64: `coolstory-plugin-linux-x64`
 
 Build locally from this repository:

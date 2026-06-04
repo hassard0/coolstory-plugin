@@ -21,9 +21,6 @@ jobs:
           - os: windows-latest
             artifact: coolstory-plugin-win-x64.exe
             binary: coolstory-plugin-win-x64.exe
-          - os: macos-13
-            artifact: coolstory-plugin-macos-x64
-            binary: coolstory-plugin-macos-x64
           - os: macos-14
             artifact: coolstory-plugin-macos-arm64
             binary: coolstory-plugin-macos-arm64

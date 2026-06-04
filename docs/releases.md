@@ -14,7 +14,6 @@ GitHub Actions builds:
 
 - `coolstory-plugin-win-x64.exe`
 - `coolstory-plugin-macos-arm64`
-- `coolstory-plugin-macos-x64`
 - `coolstory-plugin-linux-x64`
 
 Run the `Release Binaries` workflow manually or push a `v*` tag.
