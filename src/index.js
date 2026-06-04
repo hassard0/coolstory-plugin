@@ -217,6 +217,17 @@ function quickstart() {
 }
 
 async function gui() {
+  if (process.platform === "win32" && process.env.COOLSTORY_DESKTOP_CHILD !== "1") {
+    const child = spawn(process.execPath, ["gui"], {
+      detached: true,
+      stdio: "ignore",
+      windowsHide: true,
+      env: { ...process.env, COOLSTORY_DESKTOP_CHILD: "1" },
+    });
+    child.unref();
+    return;
+  }
+
   const server = createServer(async (req, res) => {
     try {
       const url = new URL(req.url ?? "/", "http://127.0.0.1");
@@ -549,253 +560,6 @@ function quickstartSteps() {
   ];
 }
 
-function desktopHtmlLegacy() {
-  return `<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>CoolStory Desktop</title>
-  <style>
-    :root {
-      color-scheme: dark;
-      --bg: #101215;
-      --panel: #171a1f;
-      --panel-2: #1f242b;
-      --border: #313741;
-      --text: #f3f6f8;
-      --muted: #a3adb8;
-      --accent: #61d394;
-      --accent-2: #7db7ff;
-      --warn: #f7c76a;
-      --danger: #ff7a90;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      background: var(--bg);
-      color: var(--text);
-      font: 14px/1.45 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-    .shell { min-height: 100vh; display: grid; grid-template-columns: 248px 1fr; }
-    aside { border-right: 1px solid var(--border); background: var(--panel); padding: 22px 18px; }
-    main { padding: 28px; max-width: 1180px; width: 100%; }
-    .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; margin-bottom: 28px; }
-    .mark { width: 30px; height: 30px; display: grid; place-items: center; border: 1px solid var(--border); border-radius: 7px; background: var(--panel-2); color: var(--accent); }
-    nav button { width: 100%; border: 0; background: transparent; color: var(--muted); text-align: left; padding: 10px 12px; border-radius: 7px; cursor: pointer; }
-    nav button.active, nav button:hover { background: var(--panel-2); color: var(--text); }
-    .status { margin-top: 28px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; color: var(--muted); font-size: 12px; }
-    h1 { font-size: 32px; margin: 0 0 8px; letter-spacing: 0; }
-    h2 { font-size: 18px; margin: 0 0 12px; }
-    p { color: var(--muted); margin: 0 0 18px; }
-    .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
-    .card { border: 1px solid var(--border); background: var(--panel); border-radius: 8px; padding: 16px; }
-    .wide { grid-column: 1 / -1; }
-    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-    input, select {
-      background: #0d0f12;
-      color: var(--text);
-      border: 1px solid var(--border);
-      border-radius: 7px;
-      padding: 10px 11px;
-      min-width: 260px;
-    }
-    button.primary, button.secondary, button.danger {
-      border: 1px solid var(--border);
-      border-radius: 7px;
-      padding: 10px 12px;
-      color: var(--text);
-      cursor: pointer;
-    }
-    button.primary { background: var(--accent); color: #07110b; border-color: var(--accent); font-weight: 700; }
-    button.secondary { background: var(--panel-2); }
-    button.danger { background: transparent; color: var(--danger); }
-    button:disabled { opacity: .55; cursor: not-allowed; }
-    .pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border: 1px solid var(--border); border-radius: 999px; color: var(--muted); font-size: 12px; }
-    .ok { color: var(--accent); }
-    .warn { color: var(--warn); }
-    .list { display: grid; gap: 8px; }
-    .item { border: 1px solid var(--border); border-radius: 8px; padding: 12px; background: #12151a; cursor: pointer; }
-    .item:hover { border-color: var(--accent-2); }
-    .mono { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; color: var(--muted); }
-    .hide { display: none; }
-    @media (max-width: 820px) {
-      .shell { grid-template-columns: 1fr; }
-      aside { border-right: 0; border-bottom: 1px solid var(--border); }
-      .grid { grid-template-columns: 1fr; }
-    }
-  </style>
-</head>
-<body>
-  <div class="shell">
-    <aside>
-      <div class="brand"><span class="mark">⌁</span> CoolStory</div>
-      <nav>
-        <button data-view="home" class="active">Home</button>
-        <button data-view="projects">Projects</button>
-        <button data-view="quickstart">Quickstart</button>
-        <button data-view="settings">Settings</button>
-      </nav>
-      <div class="status" id="sidebarStatus">Checking session...</div>
-    </aside>
-    <main>
-      <section id="home">
-        <h1>CoolStory Desktop</h1>
-        <p>Connect this client to your CoolStory web session, then hand project context to local agents without exposing the private app repo.</p>
-        <div class="grid">
-          <div class="card">
-            <h2>Session</h2>
-            <div id="sessionState" class="pill">Checking</div>
-            <p id="profileText" style="margin-top:12px"></p>
-            <button class="primary" id="connectBtn">Connect with browser</button>
-          </div>
-          <div class="card">
-            <h2>Agent Context</h2>
-            <p>Browse projects, PRDs, checkpoints, and branch guidance from the authenticated CoolStory API.</p>
-            <button class="secondary" data-jump="projects">Open projects</button>
-          </div>
-          <div class="card">
-            <h2>Secure by Default</h2>
-            <p>Authentication is approved in the CoolStory web app. This client stores only the generated token in your user profile directory.</p>
-          </div>
-          <div class="card wide hide" id="authPanel">
-            <h2>Approve Connection</h2>
-            <p>Confirm the code in the browser window that just opened.</p>
-            <div class="row">
-              <span class="pill mono" id="userCode"></span>
-              <span class="pill" id="authStatus">Waiting for approval</span>
-            </div>
-          </div>
-        </div>
-      </section>
-      <section id="projects" class="hide">
-        <h1>Projects</h1>
-        <p>Use these as the starting point for agent work. Private projects are filtered by CoolStory permissions.</p>
-        <div class="row" style="margin-bottom:14px">
-          <button class="primary" id="loadProjects">Load projects</button>
-          <select id="projectSelect"></select>
-          <button class="secondary" id="loadPrds">Load artifacts</button>
-        </div>
-        <div class="grid">
-          <div class="card">
-            <h2>Project List</h2>
-            <div id="projectList" class="list"></div>
-          </div>
-          <div class="card" style="grid-column: span 2">
-            <h2>Artifacts</h2>
-            <div id="prdList" class="list"></div>
-          </div>
-        </div>
-      </section>
-      <section id="quickstart" class="hide">
-        <h1>Quickstart</h1>
-        <p>Common ways to use CoolStory with an agent.</p>
-        <div id="quickstartList" class="list"></div>
-      </section>
-      <section id="settings" class="hide">
-        <h1>Settings</h1>
-        <p>Control the API endpoint and local session.</p>
-        <div class="card">
-          <label class="mono">API URL</label><br />
-          <input id="apiUrl" value="${DEFAULT_API_URL}" />
-          <div class="row" style="margin-top:12px">
-            <button class="primary" id="connectBtn2">Connect with browser</button>
-            <button class="danger" id="logoutBtn">Clear local session</button>
-          </div>
-        </div>
-      </section>
-    </main>
-  </div>
-  <script>
-    const state = { status: null, pollTimer: null, repos: [], selectedRepo: null, selectedArtifact: null, editorContent: "", editorRevision: 0, editorPoll: null, editorBusy: false, editorQueuedContent: null };
-    const $ = (id) => document.getElementById(id);
-    document.querySelectorAll("nav button").forEach((button) => button.addEventListener("click", () => show(button.dataset.view)));
-    document.querySelectorAll("[data-jump]").forEach((button) => button.addEventListener("click", () => show(button.dataset.jump)));
-    $("connectBtn").addEventListener("click", startAuth);
-    $("connectBtn2").addEventListener("click", startAuth);
-    $("logoutBtn").addEventListener("click", logout);
-    $("loadProjects").addEventListener("click", loadProjects);
-    $("loadPrds").addEventListener("click", () => {
-      const slug = $("projectSelect").value;
-      const repo = state.repos?.find((item) => item.slug === slug);
-      if (repo) setSelectedRepo(repo.slug, repo.name, repo.default_branch);
-      loadPrds(slug);
-    });
-
-    function show(view) {
-      document.querySelectorAll("main section").forEach((section) => section.classList.toggle("hide", section.id !== view));
-      document.querySelectorAll("nav button").forEach((button) => button.classList.toggle("active", button.dataset.view === view));
-      if (view === "quickstart") loadQuickstart();
-    }
-    async function api(path, options = {}) {
-      const response = await fetch(path, { headers: { "content-type": "application/json" }, ...options });
-      const body = await response.json();
-      if (!response.ok) throw new Error(body.error || "Request failed");
-      return body;
-    }
-    async function refreshStatus() {
-      state.status = await api("/api/status");
-      $("apiUrl").value = state.status.apiUrl || "${DEFAULT_API_URL}";
-      $("sidebarStatus").innerHTML = state.status.authenticated ? '<span class="ok">Connected</span><br>' + escapeHtml(state.status.profile?.display_name || "CoolStory user") : '<span class="warn">Not connected</span>';
-      $("sessionState").textContent = state.status.authenticated ? "Connected" : "Not connected";
-      $("sessionState").className = "pill " + (state.status.authenticated ? "ok" : "warn");
-      $("profileText").textContent = state.status.authenticated ? (state.status.profile?.display_name || "CoolStory user") : "Connect through your CoolStory web session.";
-    }
-    async function startAuth() {
-      $("authPanel").classList.remove("hide");
-      $("authStatus").textContent = "Opening browser approval";
-      const started = await api("/api/auth/start", { method: "POST", body: JSON.stringify({ apiUrl: $("apiUrl").value }) });
-      $("userCode").textContent = started.user_code;
-      $("authStatus").textContent = "Waiting for approval";
-      clearInterval(state.pollTimer);
-      state.pollTimer = setInterval(() => pollAuth(started.device_code), Math.max(2, started.interval || 5) * 1000);
-      pollAuth(started.device_code);
-    }
-    async function pollAuth(deviceCode) {
-      try {
-        const result = await api("/api/auth/poll", { method: "POST", body: JSON.stringify({ device_code: deviceCode }) });
-        if (result.access_token) {
-          clearInterval(state.pollTimer);
-          $("authStatus").textContent = "Connected";
-          await refreshStatus();
-        }
-      } catch (error) {
-        if (!String(error.message).includes("authorization_pending")) {
-          $("authStatus").textContent = error.message;
-        }
-      }
-    }
-    async function logout() {
-      await api("/api/logout", { method: "POST", body: "{}" });
-      await refreshStatus();
-    }
-    async function loadProjects() {
-      const data = await api("/api/repos");
-      const repos = data.repos || [];
-      state.repos = repos;
-      $("projectList").innerHTML = repos.map((repo) => '<div class="item" data-repo="' + escapeHtml(repo.slug) + '"><strong>' + escapeHtml(repo.name) + '</strong><div class="mono">' + escapeHtml(repo.slug) + ' · ' + escapeHtml(repo.default_branch) + '</div></div>').join("") || '<p>No projects found.</p>';
-      $("projectSelect").innerHTML = repos.map((repo) => '<option value="' + escapeHtml(repo.slug) + '">' + escapeHtml(repo.name) + '</option>').join("");
-      document.querySelectorAll("[data-repo]").forEach((el) => el.addEventListener("click", () => { $("projectSelect").value = el.dataset.repo; loadPrds(el.dataset.repo); }));
-    }
-    async function loadPrds(repo) {
-      if (!repo) return;
-      const data = await api("/api/prds?repo=" + encodeURIComponent(repo));
-      const prds = data.prds || [];
-      $("prdList").innerHTML = prds.map((prd) => '<div class="item"><strong>' + escapeHtml(prd.title) + '</strong><div class="mono">' + escapeHtml(prd.slug) + ' · ' + escapeHtml(prd.status) + ' · ' + escapeHtml(prd.branch_name) + '</div></div>').join("") || '<p>No artifacts found.</p>';
-    }
-    async function loadQuickstart() {
-      const data = await api("/api/quickstart");
-      $("quickstartList").innerHTML = data.steps.map((step, i) => '<div class="card"><span class="pill">Step ' + (i + 1) + '</span><h2 style="margin-top:10px">' + escapeHtml(step.title) + '</h2><p>' + escapeHtml(step.body) + '</p></div>').join("");
-    }
-    function escapeHtml(value) {
-      return String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
-    }
-    refreshStatus().catch((error) => { $("sidebarStatus").textContent = error.message; });
-  </script>
-</body>
-</html>`;
-}
-
 function desktopHtml() {
   return `<!doctype html>
 <html lang="en">
@@ -847,19 +611,13 @@ function desktopHtml() {
     }
     .topbar {
       display: grid;
-      grid-template-columns: 190px minmax(0, 1fr) 210px;
+      grid-template-columns: minmax(0, 1fr) auto;
       align-items: center;
       border-bottom: 1px solid var(--border);
       background: #121b21;
       padding: 0 24px;
     }
-    .traffic { display: flex; align-items: center; gap: 11px; }
-    .dot { width: 15px; height: 15px; border-radius: 50%; display: inline-block; }
-    .dot.red { background: #d94f45; }
-    .dot.amber { background: #c9893d; }
-    .dot.green { background: #43b776; }
-    .repo-title {
-      justify-self: center;
+    .app-title {
       min-width: 0;
       color: var(--muted);
       white-space: nowrap;
@@ -867,8 +625,8 @@ function desktopHtml() {
       text-overflow: ellipsis;
       letter-spacing: 0;
     }
-    .repo-title strong { color: var(--yellow); font-weight: 800; }
-    .branch-icon { color: var(--muted-2); margin-right: 10px; }
+    .app-title strong { color: #fff; font-weight: 800; margin-right: 12px; }
+    .app-title .branch { color: var(--yellow); font-weight: 800; }
     .avatars { display: flex; justify-content: flex-end; align-items: center; }
     .avatar {
       width: 38px;
@@ -1010,25 +768,9 @@ function desktopHtml() {
     .item { border: 1px solid var(--border); border-radius: 8px; padding: 12px; background: #12151a; cursor: pointer; }
     .item:hover { border-color: var(--yellow); }
     .mono { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; color: var(--muted); }
-    .comment { position: relative; padding: 4px 0 14px 20px; margin-bottom: 14px; }
-    .comment:before {
-      content: "";
-      position: absolute;
-      left: 0;
-      top: 0;
-      bottom: 10px;
-      width: 3px;
-      background: var(--muted-2);
-    }
-    .comment.yellow:before { background: var(--yellow); }
-    .comment.green:before { background: var(--green); }
-    .comment.gray:before { background: var(--muted-2); }
-    .comment .meta { color: var(--muted); margin-bottom: 4px; }
-    .comment .body-text {
-      font: 21px/1.28 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color: #fff;
-      font-weight: 650;
-    }
+    .inspector-card { border: 1px solid var(--border); border-radius: 8px; background: #0c1419; padding: 14px; margin-bottom: 12px; }
+    .inspector-card .meta { color: var(--muted); margin-bottom: 6px; font-size: 12px; text-transform: uppercase; }
+    .inspector-card .body-text { color: #fff; font: 14px/1.45 ui-sans-serif, system-ui, sans-serif; }
     .hide { display: none; }
     @media (max-width: 1260px) {
       .stage { padding: 14px; }
@@ -1052,12 +794,7 @@ function desktopHtml() {
   <div class="stage">
     <div class="app">
       <header class="topbar">
-        <div class="traffic" aria-hidden="true">
-          <span class="dot red"></span>
-          <span class="dot amber"></span>
-          <span class="dot green"></span>
-        </div>
-        <div class="repo-title"><span class="branch-icon">⌘</span> <span id="contextRepo">CoolStory Desktop</span> · <strong id="contextBranch">connect a session</strong></div>
+        <div class="app-title"><strong>CoolStory</strong><span id="contextRepo">Desktop</span> · <span class="branch" id="contextBranch">connect a session</span></div>
         <div class="avatars" id="profileAvatars" aria-label="Active collaborators">
           <span class="avatar cyan" id="profileAvatar">CS</span>
         </div>
@@ -1074,7 +811,7 @@ function desktopHtml() {
             <button data-view="settings">Settings</button>
           </nav>
           <div class="sidebar-footer">
-            <span class="pill">BMAD · planning</span>
+            <span class="pill" id="desktopMode">Desktop session</span>
             <div class="status" id="sidebarStatus">Checking session...</div>
           </div>
         </aside>
@@ -1199,7 +936,7 @@ function desktopHtml() {
             <button class="secondary" data-jump="settings">Auth</button>
           </div>
           <div id="activityRail">
-            <div class="comment gray">
+            <div class="inspector-card">
               <div class="meta">Activity</div>
               <div class="body-text">Connect and load a repo to see project context here.</div>
             </div>
@@ -1292,14 +1029,14 @@ function desktopHtml() {
         state.repos = repos;
         $("projectList").innerHTML = repos.map((repo) => '<div class="item" data-repo="' + escapeHtml(repo.slug) + '"><strong>' + escapeHtml(repo.name) + '</strong><div class="mono">' + escapeHtml(repo.slug) + ' · ' + escapeHtml(repo.default_branch) + ' · ' + escapeHtml(repo.visibility || "project") + '</div><div class="mono">' + (repo.members || []).slice(0, 4).map((member) => escapeHtml(member.display_name || "CoolStory user")).join(" · ") + '</div></div>').join("") || '<p>No projects found.</p>';
         $("projectSelect").innerHTML = repos.map((repo) => '<option value="' + escapeHtml(repo.slug) + '">' + escapeHtml(repo.name) + '</option>').join("");
-        $("activityRail").innerHTML = '<div class="comment green"><div class="meta">Repos</div><div class="body-text">' + repos.length + ' available project' + (repos.length === 1 ? '' : 's') + ' loaded for this session.</div></div>';
+        $("activityRail").innerHTML = '<div class="inspector-card"><div class="meta">Projects</div><div class="body-text">' + repos.length + ' available project' + (repos.length === 1 ? '' : 's') + ' loaded for this session.</div></div>';
         if (repos[0]) setSelectedRepo(repos[0].slug, repos[0].name, repos[0].default_branch);
         document.querySelectorAll("[data-repo]").forEach((el) => el.addEventListener("click", () => {
           selectAndLoadArtifacts(el.dataset.repo);
         }));
       } catch (error) {
         $("projectList").innerHTML = '<p>' + escapeHtml(error.message) + '</p>';
-        $("activityRail").innerHTML = '<div class="comment gray"><div class="meta">Repos</div><div class="body-text">' + escapeHtml(error.message) + '</div></div>';
+        $("activityRail").innerHTML = '<div class="inspector-card"><div class="meta">Projects</div><div class="body-text">' + escapeHtml(error.message) + '</div></div>';
       }
     }
     function selectAndLoadArtifacts(slug) {
@@ -1323,7 +1060,7 @@ function desktopHtml() {
         $("prdList").innerHTML = html;
         $("artifactViewList").innerHTML = html;
         document.querySelectorAll("[data-prd]").forEach((el) => el.addEventListener("click", () => openArtifactEditor(repo, el.dataset.prd)));
-        $("activityRail").innerHTML = '<div class="comment yellow"><div class="meta">Artifacts</div><div class="body-text">' + prds.length + ' artifact' + (prds.length === 1 ? '' : 's') + ' loaded for ' + escapeHtml(repo) + '.</div></div>';
+        $("activityRail").innerHTML = '<div class="inspector-card"><div class="meta">Artifacts</div><div class="body-text">' + prds.length + ' artifact' + (prds.length === 1 ? '' : 's') + ' loaded for ' + escapeHtml(repo) + '.</div></div>';
       } catch (error) {
         const html = '<p>' + escapeHtml(error.message) + '</p>';
         $("prdList").innerHTML = html;
@@ -1339,7 +1076,7 @@ function desktopHtml() {
         const data = await api("/api/checkpoints?repo=" + encodeURIComponent(repo));
         const checkpoints = data.checkpoints || [];
         $("checkpointList").innerHTML = checkpoints.map((checkpoint) => '<div class="item"><strong>' + escapeHtml(checkpoint.title || checkpoint.branch) + '</strong><div class="mono">' + escapeHtml(checkpoint.status) + ' · ' + escapeHtml(checkpoint.branch) + ' · ' + escapeHtml(checkpoint.commit_sha || "pending") + '</div></div>').join("") || '<p>No checkpoints found.</p>';
-        $("activityRail").innerHTML = '<div class="comment green"><div class="meta">Checkpoints</div><div class="body-text">' + checkpoints.length + ' checkpoint' + (checkpoints.length === 1 ? '' : 's') + ' loaded for ' + escapeHtml(repo) + '.</div></div>';
+        $("activityRail").innerHTML = '<div class="inspector-card"><div class="meta">Checkpoints</div><div class="body-text">' + checkpoints.length + ' checkpoint' + (checkpoints.length === 1 ? '' : 's') + ' loaded for ' + escapeHtml(repo) + '.</div></div>';
       } catch (error) {
         $("checkpointList").innerHTML = '<p>' + escapeHtml(error.message) + '</p>';
       }
