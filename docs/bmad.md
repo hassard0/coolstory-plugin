@@ -40,6 +40,7 @@ coolstory context <repo-slug>
 coolstory clone <repo-slug> ./workspace --ref main
 coolstory artifacts list <repo-slug>
 coolstory artifacts get <repo-slug> <artifact-slug>
+coolstory artifacts pull <repo-slug> <artifact-slug> docs/artifact.md
 ```
 
 Use the CoolStory artifact content as the primary product requirement input for the BMAD agent. Use the extracted snapshot as read-only project source context unless the workflow also has a normal Git remote configured.
@@ -75,6 +76,8 @@ If the BMAD agent creates or substantially rewrites a Markdown artifact locally,
 ```bash
 coolstory artifacts push <repo-slug> docs/payment-prd.md --kind prd --branch feature/<short-name>
 ```
+
+Use `coolstory artifacts kinds` when an agent needs to choose a kind for a new artifact.
 
 ### 5. Queue a checkpoint
 

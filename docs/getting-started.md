@@ -49,6 +49,7 @@ coolstory context <repo-slug>
 coolstory clone <repo-slug> ./workspace --ref main
 coolstory artifacts list <repo-slug>
 coolstory artifacts get <repo-slug> <artifact-slug>
+coolstory artifacts pull <repo-slug> <artifact-slug> docs/artifact.md
 ```
 
 ## 4. Push New BMAD Artifacts

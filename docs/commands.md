@@ -62,6 +62,8 @@ coolstory clone <repo-slug> [dir] [--ref main]
 coolstory artifacts list <repo-slug>
 coolstory artifacts get <repo-slug> <artifact-slug>
 coolstory artifacts get <repo-slug> <artifact-slug> --json
+coolstory artifacts pull <repo-slug> <artifact-slug> [file.md] [--force]
+coolstory artifacts kinds
 coolstory artifacts push <repo-slug> <file.md> [--title "..."] [--kind prd] [--branch main] [--slug slug]
 coolstory artifacts create <repo-slug> <file.md> [--title "..."] [--kind prd] [--branch main] [--slug slug]
 coolstory artifacts update <repo-slug> <file.md> [--title "..."] [--kind prd] [--branch main] [--slug slug]
@@ -70,6 +72,10 @@ coolstory artifacts update <repo-slug> <file.md> [--title "..."] [--kind prd] [-
 `coolstory prds ...` remains available as a compatibility alias for existing PRD-only workflows.
 
 `artifacts push` creates or updates the CoolStory artifact matching the inferred or supplied slug. Use it when BMAD creates a local Markdown artifact that should appear in the web artifact library.
+
+`artifacts pull` writes a CoolStory artifact to a local Markdown file for editing. It refuses to overwrite an existing file unless `--force` is supplied.
+
+`artifacts kinds` prints the supported artifact kind values for agent prompts and scripts.
 
 `artifacts create` and `artifacts update` are explicit aliases for agent prompts that prefer intent-specific commands. The server still performs a safe upsert and reports whether the artifact was created or updated.
 

@@ -31,6 +31,7 @@ Load project context:
 coolstory context <repo-slug>
 coolstory context <repo-slug> <artifact-slug>
 coolstory clone <repo-slug> ./workspace --ref main
+coolstory artifacts pull <repo-slug> <artifact-slug> docs/artifact.md
 ```
 
 Use `clone` when the BMAD client needs local project source context. It downloads a tenant-checked snapshot from CoolStory and extracts it into the target folder.
@@ -41,6 +42,7 @@ List artifacts:
 
 ```bash
 coolstory artifacts list <repo-slug>
+coolstory artifacts kinds
 ```
 
 Read an artifact:

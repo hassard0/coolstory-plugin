@@ -105,6 +105,7 @@ coolstory repos list
 coolstory clone <repo-slug> ./workspace
 coolstory artifacts list <repo-slug>
 coolstory artifacts get <repo-slug> <artifact-slug>
+coolstory artifacts pull <repo-slug> <artifact-slug> docs/artifact.md
 coolstory artifacts push <repo-slug> docs/my-bmad-artifact.md --kind prd --branch feature/my-work
 coolstory checkpoint "Implemented artifact slice" --repo <repo-slug> --file <path>
 ```
@@ -149,6 +150,19 @@ Fetch an artifact as JSON for custom tooling:
 coolstory artifacts get my-project launch-artifact --json
 ```
 
+Pull an artifact into a local Markdown file before editing:
+
+```bash
+coolstory artifacts pull my-project launch-artifact docs/launch-artifact.md
+coolstory artifacts pull my-project launch-artifact docs/launch-artifact.md --force
+```
+
+List supported artifact kinds:
+
+```bash
+coolstory artifacts kinds
+```
+
 ## BMAD Integration
 
 BMAD teams should treat CoolStory as the source of truth for product artifacts, project context, checkpoints, and review history.
@@ -163,6 +177,7 @@ Recommended agent loop:
    coolstory repos list
    coolstory artifacts list <repo-slug>
    coolstory artifacts get <repo-slug> <artifact-slug>
+   coolstory artifacts pull <repo-slug> <artifact-slug> docs/artifact.md
    ```
 
 2. Load the artifact and extracted project files into the BMAD agent context.
