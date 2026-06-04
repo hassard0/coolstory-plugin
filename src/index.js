@@ -269,7 +269,7 @@ export async function startDesktopServer() {
           sendJson(res, payload, response.status);
           return;
         }
-        openExternal(payload.verification_uri_complete);
+        await openExternal(payload.verification_uri_complete);
         sendJson(res, payload);
         return;
       }
@@ -481,7 +481,16 @@ async function readJson(req) {
   return JSON.parse(Buffer.concat(chunks).toString("utf8"));
 }
 
-function openExternal(url) {
+async function openExternal(url) {
+  if (process.versions?.electron) {
+    try {
+      const { shell } = await import("electron");
+      await shell.openExternal(url);
+      return;
+    } catch {
+      // Fall back to OS launch below.
+    }
+  }
   const command = process.platform === "win32" ? "explorer.exe" : process.platform === "darwin" ? "open" : "xdg-open";
   const args = [url];
   const child = spawn(command, args, { detached: true, stdio: "ignore", windowsHide: true });
@@ -647,6 +656,9 @@ function desktopHtml() {
     .avatar.yellow { background: var(--yellow); }
     .avatar.green { background: #3fc97f; }
     .body { display: grid; grid-template-columns: clamp(220px, 19vw, 320px) minmax(0, 1fr) clamp(280px, 24vw, 380px); min-height: 0; }
+    .app.left-collapsed .body { grid-template-columns: 0 minmax(0, 1fr) clamp(280px, 24vw, 380px); }
+    .app.right-collapsed .body { grid-template-columns: clamp(220px, 19vw, 320px) minmax(0, 1fr) 0; }
+    .app.left-collapsed.right-collapsed .body { grid-template-columns: 0 minmax(0, 1fr) 0; }
     aside.sidebar {
       display: flex;
       flex-direction: column;
@@ -656,6 +668,7 @@ function desktopHtml() {
       resize: horizontal;
       overflow: auto;
     }
+    .app.left-collapsed aside.sidebar { padding: 0; border-right: 0; overflow: hidden; }
     nav { display: grid; gap: 4px; }
     nav button {
       width: 100%;
@@ -670,6 +683,20 @@ function desktopHtml() {
       font-size: 15px;
     }
     nav button.active, nav button:hover { background: #172027; color: #fff; }
+    .nav-section { margin: 18px 0 8px; color: var(--muted-2); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
+    .nav-list { display: grid; gap: 4px; }
+    .nav-list button {
+      width: 100%;
+      border: 0;
+      border-radius: 7px;
+      background: transparent;
+      color: var(--muted);
+      text-align: left;
+      padding: 8px 10px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .nav-list button:hover, .nav-list button.active { background: #172027; color: #fff; }
     .sidebar-footer { margin-top: auto; display: grid; gap: 14px; align-items: start; }
     .status { max-width: 100%; color: var(--muted); font-size: 13px; }
     main {
@@ -685,7 +712,21 @@ function desktopHtml() {
       padding: 20px;
       overflow: auto;
     }
+    .app.right-collapsed .rail { padding: 0; border-left: 0; overflow: hidden; }
     .rail-actions { display: flex; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+    .top-actions { display: flex; gap: 8px; align-items: center; }
+    .icon-button {
+      width: 34px;
+      height: 34px;
+      display: inline-grid;
+      place-items: center;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: var(--panel-2);
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .icon-button:hover { color: #fff; border-color: var(--yellow); }
     .doc-path { color: var(--muted); margin: 0 0 22px; }
     h1 {
       margin: 0 0 21px;
@@ -801,21 +842,28 @@ function desktopHtml() {
     <div class="app">
       <header class="topbar">
         <div class="app-title"><strong>CoolStory</strong><span id="contextRepo">Desktop</span> · <span class="branch" id="contextBranch">connect a session</span></div>
-        <div class="avatars" id="profileAvatars" aria-label="Active collaborators">
-          <span class="avatar cyan" id="profileAvatar">CS</span>
+        <div class="top-actions">
+          <button class="icon-button" id="toggleLeft" title="Collapse artifact navigation">☰</button>
+          <button class="icon-button" id="toggleRight" title="Collapse inspector">◨</button>
+          <div class="avatars" id="profileAvatars" aria-label="Active collaborators">
+            <span class="avatar cyan" id="profileAvatar">CS</span>
+          </div>
         </div>
       </header>
       <div class="body">
         <aside class="sidebar">
+          <div class="nav-section">Workspace</div>
           <nav>
             <button data-view="home" class="active">Workspace</button>
             <button data-view="projects">Repos</button>
-            <button data-view="artifacts">Artifacts</button>
-            <button data-view="editor">Editor</button>
             <button data-view="checkpoints">Checkpoints</button>
             <button data-view="quickstart">Quickstart</button>
             <button data-view="settings">Settings</button>
           </nav>
+          <div class="nav-section">Artifact Types</div>
+          <div id="artifactTypeNav" class="nav-list"><button disabled>Load a repo</button></div>
+          <div class="nav-section">Artifacts</div>
+          <div id="sidebarArtifactNav" class="nav-list"><button disabled>No artifacts loaded</button></div>
           <div class="sidebar-footer">
             <span class="pill" id="desktopMode">Desktop session</span>
             <div class="status" id="sidebarStatus">Checking session...</div>
@@ -952,10 +1000,12 @@ function desktopHtml() {
     </div>
   </div>
   <script>
-    const state = { status: null, pollTimer: null, repos: [], selectedRepo: null, selectedArtifact: null, editorContent: "", editorRevision: 0, editorPoll: null, editorBusy: false, editorQueuedContent: null };
+    const state = { status: null, pollTimer: null, repos: [], artifacts: [], artifactFilter: "all", selectedRepo: null, selectedArtifact: null, editorContent: "", editorRevision: 0, editorPoll: null, editorBusy: false, editorQueuedContent: null };
     const $ = (id) => document.getElementById(id);
     document.querySelectorAll("nav button").forEach((button) => button.addEventListener("click", () => show(button.dataset.view)));
     document.querySelectorAll("[data-jump]").forEach((button) => button.addEventListener("click", () => show(button.dataset.jump)));
+    $("toggleLeft").addEventListener("click", () => document.querySelector(".app").classList.toggle("left-collapsed"));
+    $("toggleRight").addEventListener("click", () => document.querySelector(".app").classList.toggle("right-collapsed"));
     $("connectBtn").addEventListener("click", startAuth);
     $("connectBtn2").addEventListener("click", startAuth);
     $("logoutBtn").addEventListener("click", logout);
@@ -1062,16 +1112,43 @@ function desktopHtml() {
       try {
         const data = await api("/api/prds?repo=" + encodeURIComponent(repo));
         const prds = data.prds || [];
-        const html = prds.map((prd) => '<div class="item" data-prd="' + escapeHtml(prd.slug) + '"><strong>' + escapeHtml(prd.title) + '</strong><div class="mono">' + escapeHtml(artifactLabel(prd.kind)) + ' · ' + escapeHtml(prd.slug) + ' · ' + escapeHtml(prd.status) + ' · ' + escapeHtml(prd.branch_name) + '</div></div>').join("") || '<p>No artifacts found.</p>';
-        $("prdList").innerHTML = html;
-        $("artifactViewList").innerHTML = html;
-        document.querySelectorAll("[data-prd]").forEach((el) => el.addEventListener("click", () => openArtifactEditor(repo, el.dataset.prd)));
+        state.artifacts = prds;
+        state.artifactFilter = "all";
+        renderArtifactNavigation(repo);
+        renderArtifactLists(repo);
         $("activityRail").innerHTML = '<div class="inspector-card"><div class="meta">Artifacts</div><div class="body-text">' + prds.length + ' artifact' + (prds.length === 1 ? '' : 's') + ' loaded for ' + escapeHtml(repo) + '.</div></div>';
       } catch (error) {
         const html = '<p>' + escapeHtml(error.message) + '</p>';
         $("prdList").innerHTML = html;
         $("artifactViewList").innerHTML = html;
+        $("artifactTypeNav").innerHTML = '<button disabled>Unable to load types</button>';
+        $("sidebarArtifactNav").innerHTML = '<button disabled>Unable to load artifacts</button>';
       }
+    }
+    function renderArtifactNavigation(repo) {
+      const counts = state.artifacts.reduce((acc, item) => {
+        const key = item.kind || "artifact";
+        acc[key] = (acc[key] || 0) + 1;
+        return acc;
+      }, {});
+      const typeButtons = [['all', 'All artifacts', state.artifacts.length]].concat(Object.entries(counts).map(([kind, count]) => [kind, artifactLabel(kind), count]));
+      $("artifactTypeNav").innerHTML = typeButtons.map(([kind, label, count]) => '<button data-kind="' + escapeHtml(kind) + '" class="' + (state.artifactFilter === kind ? 'active' : '') + '">' + escapeHtml(label) + ' <span class="mono">' + count + '</span></button>').join("") || '<button disabled>No artifact types</button>';
+      document.querySelectorAll("[data-kind]").forEach((button) => button.addEventListener("click", () => {
+        state.artifactFilter = button.dataset.kind;
+        renderArtifactNavigation(repo);
+        renderArtifactLists(repo);
+        show("artifacts");
+      }));
+    }
+    function renderArtifactLists(repo) {
+      const filtered = state.artifactFilter === "all" ? state.artifacts : state.artifacts.filter((item) => (item.kind || "artifact") === state.artifactFilter);
+      const html = filtered.map((prd) => '<div class="item" data-prd="' + escapeHtml(prd.slug) + '"><strong>' + escapeHtml(prd.title) + '</strong><div class="mono">' + escapeHtml(artifactLabel(prd.kind)) + ' · ' + escapeHtml(prd.slug) + ' · ' + escapeHtml(prd.status) + ' · ' + escapeHtml(prd.branch_name) + '</div></div>').join("") || '<p>No artifacts found.</p>';
+      const navHtml = filtered.map((prd) => '<button data-nav-prd="' + escapeHtml(prd.slug) + '">' + escapeHtml(artifactLabel(prd.kind)) + ' · ' + escapeHtml(prd.title) + '</button>').join("") || '<button disabled>No artifacts</button>';
+      $("prdList").innerHTML = html;
+      $("artifactViewList").innerHTML = html;
+      $("sidebarArtifactNav").innerHTML = navHtml;
+      document.querySelectorAll("[data-prd]").forEach((el) => el.addEventListener("click", () => openArtifactEditor(repo, el.dataset.prd)));
+      document.querySelectorAll("[data-nav-prd]").forEach((el) => el.addEventListener("click", () => openArtifactEditor(repo, el.dataset.navPrd)));
     }
     async function loadCheckpoints(repo) {
       if (!repo) {
@@ -1209,6 +1286,10 @@ function desktopHtml() {
       $("contextRepo").textContent = name || slug || "CoolStory Desktop";
       $("contextBranch").textContent = branch || "repo selected";
       state.selectedRepo = slug ? { slug, name, default_branch: branch } : null;
+      state.artifacts = [];
+      state.artifactFilter = "all";
+      $("artifactTypeNav").innerHTML = '<button disabled>Load artifacts</button>';
+      $("sidebarArtifactNav").innerHTML = '<button disabled>No artifacts loaded</button>';
       renderAvatars(repo?.members?.length ? repo.members : [{ display_name: state.status?.profile?.display_name || "CS", avatar_url: state.status?.profile?.avatar_url || null }]);
       $("homePath").textContent = slug ? "repos/" + slug : "desktop/session";
       $("artifactsPath").textContent = slug ? "repos/" + slug + "/artifacts" : "artifacts";
