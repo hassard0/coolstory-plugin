@@ -619,6 +619,8 @@ function desktopHtml() {
     button, input, select { font: inherit; }
     .stage { min-height: 100vh; padding: 0; }
     .app {
+      --left-w: clamp(240px, 20vw, 340px);
+      --right-w: clamp(300px, 24vw, 400px);
       min-height: 100vh;
       overflow: hidden;
       display: grid;
@@ -660,17 +662,33 @@ function desktopHtml() {
     .avatar.cyan { background: var(--cyan); }
     .avatar.yellow { background: var(--yellow); }
     .avatar.green { background: #3fc97f; }
-    .body { display: grid; grid-template-columns: clamp(220px, 19vw, 320px) minmax(0, 1fr) clamp(280px, 24vw, 380px); min-height: 0; }
-    .app.left-collapsed .body { grid-template-columns: 0 minmax(0, 1fr) clamp(280px, 24vw, 380px); }
-    .app.right-collapsed .body { grid-template-columns: clamp(220px, 19vw, 320px) minmax(0, 1fr) 0; }
-    .app.left-collapsed.right-collapsed .body { grid-template-columns: 0 minmax(0, 1fr) 0; }
+    .body { display: grid; grid-template-columns: var(--left-w) 6px minmax(0, 1fr) 6px var(--right-w); min-height: 0; }
+    .app.left-collapsed .body { grid-template-columns: 0 0 minmax(0, 1fr) 6px var(--right-w); }
+    .app.right-collapsed .body { grid-template-columns: var(--left-w) 6px minmax(0, 1fr) 0 0; }
+    .app.left-collapsed.right-collapsed .body { grid-template-columns: 0 0 minmax(0, 1fr) 0 0; }
+    .resize-handle {
+      cursor: col-resize;
+      background: transparent;
+      position: relative;
+    }
+    .resize-handle::after {
+      content: "";
+      position: absolute;
+      inset: 0 2px;
+      background: var(--border);
+      opacity: .55;
+    }
+    .resize-handle:hover::after { background: var(--yellow); opacity: .9; }
+    .app.left-collapsed #leftResize,
+    .app.right-collapsed #rightResize { cursor: default; }
+    .app.left-collapsed #leftResize::after,
+    .app.right-collapsed #rightResize::after { display: none; }
     aside.sidebar {
       display: flex;
       flex-direction: column;
       border-right: 1px solid var(--border);
       background: #0e161a;
       padding: 20px 16px;
-      resize: horizontal;
       overflow: auto;
     }
     .app.left-collapsed aside.sidebar { padding: 0; border-right: 0; overflow: hidden; }
@@ -848,8 +866,8 @@ function desktopHtml() {
       <header class="topbar">
         <div class="app-title"><strong>CoolStory</strong><span id="contextRepo">Desktop</span> - <span class="branch" id="contextBranch">connect a session</span></div>
         <div class="top-actions">
-          <button class="icon-button" id="toggleLeft" title="Collapse artifact navigation">Nav</button>
-          <button class="icon-button" id="toggleRight" title="Collapse inspector">Info</button>
+          <button class="icon-button" id="toggleLeft" title="Collapse artifact navigation" aria-label="Toggle artifact navigation">☰</button>
+          <button class="icon-button" id="toggleRight" title="Collapse inspector" aria-label="Toggle inspector">ⓘ</button>
           <div class="avatars" id="profileAvatars" aria-label="Active collaborators">
             <span class="avatar cyan" id="profileAvatar">CS</span>
           </div>
@@ -874,6 +892,7 @@ function desktopHtml() {
             <div class="status" id="sidebarStatus">Checking session...</div>
           </div>
         </aside>
+        <div class="resize-handle" id="leftResize" title="Resize navigation"></div>
         <main>
           <div class="workspace">
             <section id="home">
@@ -990,6 +1009,7 @@ function desktopHtml() {
             </section>
           </div>
         </main>
+        <div class="resize-handle" id="rightResize" title="Resize inspector"></div>
         <aside class="rail">
           <div class="rail-actions">
             <span class="pill" id="railState">Local app</span>
@@ -1012,6 +1032,8 @@ function desktopHtml() {
     document.querySelectorAll("[data-jump]").forEach((button) => button.addEventListener("click", () => show(button.dataset.jump)));
     $("toggleLeft").addEventListener("click", () => document.querySelector(".app").classList.toggle("left-collapsed"));
     $("toggleRight").addEventListener("click", () => document.querySelector(".app").classList.toggle("right-collapsed"));
+    setupResize("leftResize", "--left-w", 220, 420, (event) => event.clientX);
+    setupResize("rightResize", "--right-w", 260, 460, (event) => window.innerWidth - event.clientX);
     $("connectBtn").addEventListener("click", startAuth);
     $("connectBtn2").addEventListener("click", startAuth);
     $("logoutBtn").addEventListener("click", logout);
@@ -1275,8 +1297,40 @@ function desktopHtml() {
       return parts.slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "CS";
     }
     function artifactLabel(kind) {
-      const labels = { prd: "PRD", architecture: "Architecture", design: "Design", decision: "Decision", note: "Note" };
+      const labels = {
+        project_brief: "Project Brief",
+        prd: "PRD",
+        architecture: "Architecture",
+        frontend_spec: "Front-end Spec",
+        design_doc: "Design Doc",
+        rfc: "RFC",
+        rfd: "RFD",
+        epic: "Epic",
+        story: "Story",
+        qa_gate: "QA Gate",
+        retrospective: "Retro",
+        note: "Note"
+      };
       return labels[kind] || kind || "Artifact";
+    }
+    function setupResize(handleId, cssVar, min, max, measure) {
+      const handle = $(handleId);
+      const app = document.querySelector(".app");
+      handle.addEventListener("pointerdown", (event) => {
+        event.preventDefault();
+        handle.setPointerCapture(event.pointerId);
+        const move = (moveEvent) => {
+          const width = Math.max(min, Math.min(max, measure(moveEvent)));
+          app.style.setProperty(cssVar, width + "px");
+        };
+        const up = (upEvent) => {
+          handle.releasePointerCapture(upEvent.pointerId);
+          window.removeEventListener("pointermove", move);
+          window.removeEventListener("pointerup", up);
+        };
+        window.addEventListener("pointermove", move);
+        window.addEventListener("pointerup", up);
+      });
     }
     function renderAvatars(members) {
       const colors = ["cyan", "yellow", "green"];

@@ -47,6 +47,8 @@ async function runPackagedSmoke(url) {
         const ids = [
           "toggleLeft",
           "toggleRight",
+          "leftResize",
+          "rightResize",
           "artifactTypeNav",
           "sidebarArtifactNav",
           "projectList",
@@ -70,6 +72,7 @@ async function runPackagedSmoke(url) {
     if (mainWindow.getTitle() !== "CoolStory Desktop") failures.push("window title mismatch");
     if (!url.startsWith("http://127.0.0.1:")) failures.push("desktop did not load local server URL");
     if (bounds.width < 1100 || bounds.height < 720) failures.push("window opened below minimum landscape size");
+    if (bounds.width <= bounds.height) failures.push("window did not open in landscape orientation");
     if (missingIds.length) failures.push(`missing DOM ids: ${missingIds.join(", ")}`);
     if (!bodyText.includes("open browser sign-in")) failures.push("device auth action is missing");
     if (!bodyText.includes("projects")) failures.push("project navigation is missing");

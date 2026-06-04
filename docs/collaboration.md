@@ -12,11 +12,13 @@ CoolStory collaboration is branch-backed.
 
 ## Multiple Sessions
 
-The web editor protects against silent overwrites:
+The web and desktop editors share the same server-backed edit stream:
 
-- it polls for newer artifact versions
-- it blocks stale saves
-- it asks the user to load the latest version when another session changed the artifact
+- every accepted edit increments the artifact revision
+- clients poll for operations after their current revision
+- stale edits are transformed over newer operations before they are saved
+- the editor shows live/syncing/offline state
+- selected text can be anchored into review comments in the web app
 
 Agents should avoid long-running blind edits. Before queueing a checkpoint, refresh context and cite all changed files.
 
@@ -30,3 +32,4 @@ Recommended flow:
 2. Wait for them to accept/sign in.
 3. Add them to the private project from the project members panel.
 
+The desktop app must keep project navigation, artifact type filters, artifact lists, collaborator avatars, checkpoints, and editor state populated from the authenticated CoolStory backend. It must not ship static navigation copied from a mockup.

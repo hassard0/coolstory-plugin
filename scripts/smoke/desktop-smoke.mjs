@@ -8,9 +8,12 @@ try {
   const html = await fetchText("/");
   expect(html.includes("toggleLeft"), "left rail collapse control missing");
   expect(html.includes("toggleRight"), "right rail collapse control missing");
+  expect(html.includes("leftResize"), "left rail resize handle missing");
+  expect(html.includes("rightResize"), "right rail resize handle missing");
   expect(html.includes("artifactTypeNav"), "artifact type navigation missing");
   expect(html.includes("sidebarArtifactNav"), "artifact navigation missing");
   expect(html.includes("Open browser sign-in"), "device auth browser sign-in action missing");
+  expect(html.includes("frontend_spec"), "full backend artifact taxonomy missing");
 
   const status = await fetchJson("/api/status");
   expect(status.ok === true, "status endpoint did not return ok");

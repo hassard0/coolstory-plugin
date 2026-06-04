@@ -22,7 +22,9 @@ For desktop use, launch the GUI and approve the browser connection:
 coolstory-plugin
 ```
 
-The app opens a local CoolStory client in your browser. Choose **Connect with browser**, approve the matching code in the CoolStory web session, then return to the client.
+The app opens a local CoolStory desktop window. Choose **Open browser sign-in**, approve the matching code in the CoolStory web session, then return to the local app.
+
+The desktop window is an Electron app shell backed by a loopback server at `127.0.0.1`. It opens your system browser only for device-code approval.
 
 For headless agent or CI use, create a token manually.
 

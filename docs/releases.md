@@ -24,7 +24,7 @@ The workflow must pass three gates before assets are uploaded:
 - Source desktop smoke: `npm run smoke:desktop`
 - Packaged desktop app smoke: `npm run smoke:desktop:packaged`
 
-The packaged smoke launches the built app on the native runner, verifies it opens a local Electron window, checks the landscape window size, confirms the device-code sign-in action is rendered, and asserts project, artifact type, artifact, avatar, and editor navigation elements exist.
+The packaged smoke launches the built app on the native runner, verifies it opens a local Electron window, checks the landscape window size, confirms the device-code sign-in action is rendered, and asserts project, artifact type, artifact, avatar, editor, and sidebar resize elements exist.
 
 ## Latest Verified Release
 
