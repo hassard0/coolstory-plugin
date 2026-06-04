@@ -11,7 +11,7 @@ This repository is intentionally separate from the private CoolStory product rep
 - authenticate to CoolStory through a browser-approved web session
 - launch a local desktop-style GUI for project and artifact context
 - list accessible projects and repositories
-- read PRDs into an agent context
+- read artifacts into an agent context
 - inspect Git refs and download authenticated snapshots
 - queue implementation checkpoints against a branch
 - hand off work back to CoolStory for review, history, and pull requests
@@ -96,9 +96,9 @@ export COOLSTORY_TOKEN=cs_pat_xxxxxxxxxxxxxxxx
 coolstory-desktop quickstart
 coolstory-desktop whoami
 coolstory-desktop repos list
-coolstory-desktop prds list <repo-slug>
-coolstory-desktop prds get <repo-slug> <prd-slug>
-coolstory-desktop checkpoint "Implemented PRD slice" --repo <repo-slug> --file <path>
+coolstory-desktop artifacts list <repo-slug>
+coolstory-desktop artifacts get <repo-slug> <artifact-slug>
+coolstory-desktop checkpoint "Implemented artifact slice" --repo <repo-slug> --file <path>
 ```
 
 ## Common Workflows
@@ -121,10 +121,10 @@ Queue a checkpoint for the current branch:
 coolstory-desktop checkpoint "Agent implementation checkpoint" --repo my-project --branch feature/agent-work --file src/app.ts
 ```
 
-Fetch a PRD as JSON for custom tooling:
+Fetch an artifact as JSON for custom tooling:
 
 ```bash
-coolstory-desktop prds get my-project launch-prd --json
+coolstory-desktop artifacts get my-project launch-artifact --json
 ```
 
 ## BMAD Integration
@@ -133,15 +133,15 @@ BMAD teams should treat CoolStory as the source of truth for product artifacts, 
 
 Recommended agent loop:
 
-1. Discover the repo and PRD:
+1. Discover the project and artifact:
 
    ```bash
    coolstory-desktop repos list
-   coolstory-desktop prds list <repo-slug>
-   coolstory-desktop prds get <repo-slug> <prd-slug>
+   coolstory-desktop artifacts list <repo-slug>
+   coolstory-desktop artifacts get <repo-slug> <artifact-slug>
    ```
 
-2. Load the PRD and project files into the BMAD agent context.
+2. Load the artifact and project files into the BMAD agent context.
 
 3. Implement in a normal Git branch.
 

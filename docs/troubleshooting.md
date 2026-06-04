@@ -26,11 +26,11 @@ coolstory-desktop whoami
 
 ## `404 Not Found`
 
-Check the repository slug and PRD slug:
+Check the repository slug and artifact slug:
 
 ```bash
 coolstory-desktop repos list
-coolstory-desktop prds list <repo-slug>
+coolstory-desktop artifacts list <repo-slug>
 ```
 
 ## Cannot install from GitHub
@@ -55,4 +55,3 @@ Use environment variables:
 export COOLSTORY_API_URL=https://coolstory.dev
 export COOLSTORY_TOKEN=cs_pat_xxxxxxxxxxxxxxxx
 ```
-

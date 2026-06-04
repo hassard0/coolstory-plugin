@@ -4,7 +4,7 @@ This guide shows how to connect BMAD-style planning and implementation workflows
 
 CoolStory should be used as the durable collaboration layer:
 
-- PRDs live in CoolStory and can be fetched by agents.
+- Product artifacts live in CoolStory and can be fetched by agents.
 - Implementation work happens on normal Git branches.
 - Agent checkpoints are queued back to CoolStory.
 - Review, comments, branch history, and pull requests are handled in CoolStory.
@@ -36,17 +36,17 @@ coolstory-desktop repos list
 
 ```bash
 coolstory-desktop repos list
-coolstory-desktop prds list <repo-slug>
-coolstory-desktop prds get <repo-slug> <prd-slug>
+coolstory-desktop artifacts list <repo-slug>
+coolstory-desktop artifacts get <repo-slug> <artifact-slug>
 ```
 
-Use the PRD content as the primary product requirement input for the BMAD agent.
+Use the CoolStory artifact content as the primary product requirement input for the BMAD agent.
 
 ### 2. Prime the agent
 
 Give the agent:
 
-- the PRD fetched from CoolStory
+- the artifact fetched from CoolStory
 - the relevant local source files
 - the current Git branch name
 - the expected checkpoint title
@@ -55,7 +55,7 @@ Give the agent:
 Suggested agent instruction:
 
 ```text
-Use the CoolStory PRD as the source of truth. Implement the smallest coherent slice, cite changed files, and queue a CoolStory checkpoint when done.
+Use the CoolStory artifact as the source of truth. Implement the smallest coherent slice, cite changed files, and queue a CoolStory checkpoint when done.
 ```
 
 ### 3. Implement on a branch
@@ -93,7 +93,7 @@ Review:
 
 - checkpoint history
 - artifact comments
-- PRD changes
+- artifact changes
 - pull request branch comparison
 - team feedback
 
@@ -104,7 +104,7 @@ For ephemeral agent containers:
 ```bash
 export COOLSTORY_API_URL=https://coolstory.dev
 export COOLSTORY_TOKEN=cs_pat_xxxxxxxxxxxxxxxx
-coolstory-desktop prds get <repo-slug> <prd-slug>
+coolstory-desktop artifacts get <repo-slug> <artifact-slug>
 ```
 
 This avoids writing `~/.coolstory/plugin.json`.
@@ -113,10 +113,9 @@ This avoids writing `~/.coolstory/plugin.json`.
 
 Before an agent marks work complete:
 
-- PRD requirement was read from CoolStory.
+- Artifact requirement was read from CoolStory.
 - Work happened on a named Git branch.
 - Changed files are listed in the checkpoint.
 - Summary explains the implementation and tradeoffs.
 - Follow-up risks or missing tests are noted.
 - CoolStory checkpoint was queued successfully.
-

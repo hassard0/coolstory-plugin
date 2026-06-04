@@ -43,8 +43,8 @@ coolstory-desktop whoami
 
 ```bash
 coolstory-desktop repos list
-coolstory-desktop prds list <repo-slug>
-coolstory-desktop prds get <repo-slug> <prd-slug>
+coolstory-desktop artifacts list <repo-slug>
+coolstory-desktop artifacts get <repo-slug> <artifact-slug>
 ```
 
 ## 4. Work In Git

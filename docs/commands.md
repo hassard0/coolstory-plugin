@@ -7,7 +7,7 @@ coolstory-plugin
 coolstory-desktop gui
 ```
 
-Launches a local desktop-style GUI and opens it in the default browser. Authentication uses CoolStory's device-code flow: the client starts a connection request, the user approves it in the authenticated CoolStory web app, and the client stores the generated token locally.
+Launches the local desktop GUI. The packaged Windows and macOS builds open as native app windows; source installs can also run this browser-backed local shell. Authentication uses CoolStory's device-code flow: the client starts a connection request, the user approves it in the authenticated CoolStory web app, and the client stores the generated token locally.
 
 ## Auth
 
@@ -41,13 +41,15 @@ coolstory-desktop repos refs <repo-slug>
 coolstory-desktop repos archive <repo-slug> [output.tar] [--ref main]
 ```
 
-## PRDs
+## Artifacts
 
 ```bash
-coolstory-desktop prds list <repo-slug>
-coolstory-desktop prds get <repo-slug> <prd-slug>
-coolstory-desktop prds get <repo-slug> <prd-slug> --json
+coolstory-desktop artifacts list <repo-slug>
+coolstory-desktop artifacts get <repo-slug> <artifact-slug>
+coolstory-desktop artifacts get <repo-slug> <artifact-slug> --json
 ```
+
+`coolstory-desktop prds ...` remains available as a compatibility alias for existing PRD-only workflows.
 
 ## Checkpoints
 

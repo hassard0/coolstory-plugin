@@ -5,10 +5,10 @@ Use these prompts when connecting coding agents to CoolStory.
 ## Implementation Agent
 
 ```text
-You are working from a CoolStory PRD. Treat the PRD as the source of truth.
+You are working from a CoolStory artifact. Treat the artifact as the source of truth.
 
 Before coding:
-- read the PRD content
+- read the artifact content
 - inspect the current branch
 - identify the smallest coherent implementation slice
 
@@ -26,7 +26,7 @@ Before finishing:
 Suggested command sequence:
 
 ```bash
-coolstory-desktop prds get <repo-slug> <prd-slug>
+coolstory-desktop artifacts get <repo-slug> <artifact-slug>
 git checkout -b feature/<short-name>
 # agent edits files
 coolstory-desktop checkpoint "Implemented <slice>" --repo <repo-slug> --branch feature/<short-name> --file <path>
@@ -35,7 +35,7 @@ coolstory-desktop checkpoint "Implemented <slice>" --repo <repo-slug> --branch f
 ## Reviewer Agent
 
 ```text
-Review the CoolStory PRD, checkpoint summary, changed files, and branch diff.
+Review the CoolStory artifact, checkpoint summary, changed files, and branch diff.
 Prioritize correctness, security, permissions, data isolation, and missing tests.
 Return findings first, ordered by severity, with file references.
 ```
@@ -51,4 +51,3 @@ Use BMAD roles explicitly:
 
 Checkpoint only after a coherent slice is complete.
 ```
-

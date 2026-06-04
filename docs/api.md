@@ -23,13 +23,15 @@ curl "$COOLSTORY_API_URL/api/public/cli/repos" \
   -H "Authorization: Bearer $COOLSTORY_TOKEN"
 ```
 
-## PRDs
+## Artifacts
+
+The current public API route is still named `/prds` for compatibility, but the returned records are CoolStory artifacts.
 
 ```bash
 curl "$COOLSTORY_API_URL/api/public/cli/repos/<repo-slug>/prds" \
   -H "Authorization: Bearer $COOLSTORY_TOKEN"
 
-curl "$COOLSTORY_API_URL/api/public/cli/repos/<repo-slug>/prds/<prd-slug>" \
+curl "$COOLSTORY_API_URL/api/public/cli/repos/<repo-slug>/prds/<artifact-slug>" \
   -H "Authorization: Bearer $COOLSTORY_TOKEN"
 ```
 
@@ -61,4 +63,3 @@ curl "$COOLSTORY_API_URL/api/public/git/repos/<repo-slug>/archive?ref=main" \
   -H "Authorization: Bearer $COOLSTORY_TOKEN" \
   -o repo-main.tar
 ```
-

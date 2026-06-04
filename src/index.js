@@ -20,6 +20,7 @@ const commands = {
   "whoami": whoami,
   "status": status,
   "repos": repos,
+  "artifacts": prds,
   "prds": prds,
   "checkpoints": checkpoints,
   "checkpoint": checkpoint,
@@ -46,8 +47,10 @@ Usage:
   coolstory-desktop repos list
   coolstory-desktop repos refs <repo>
   coolstory-desktop repos archive <repo> [output.tar] [--ref main]
-  coolstory-desktop prds list <repo>
-  coolstory-desktop prds get <repo> <prd> [--json]
+  coolstory-desktop artifacts list <repo>
+  coolstory-desktop artifacts get <repo> <artifact> [--json]
+  coolstory-desktop prds list <repo>                         # legacy alias
+  coolstory-desktop prds get <repo> <prd> [--json]            # legacy alias
   coolstory-desktop checkpoints list <repo>
   coolstory-desktop checkpoint <title> --repo <repo> [--summary "..."] [--file path ...]
   coolstory-desktop gui
@@ -154,7 +157,7 @@ async function prds(args) {
     console.log(response.prd?.content ?? "");
     return;
   }
-  throw new Error("Usage: coolstory-desktop prds <list|get>");
+  throw new Error("Usage: coolstory-desktop artifacts <list|get>");
 }
 
 async function checkpoints(args) {
@@ -204,13 +207,13 @@ function quickstart() {
 
 2. Discover the project:
    coolstory-desktop repos list
-   coolstory-desktop prds list <repo>
-   coolstory-desktop prds get <repo> <prd>
+   coolstory-desktop artifacts list <repo>
+   coolstory-desktop artifacts get <repo> <artifact>
 
-3. Work from the PRD and cite files you changed.
+3. Work from the artifact and cite files you changed.
 
 4. Queue a checkpoint:
-   coolstory-desktop checkpoint "Implemented PRD slice" --repo <repo> --file <path>
+   coolstory-desktop checkpoint "Implemented artifact slice" --repo <repo> --file <path>
 
 5. Open CoolStory to review branch history, comments, and PRs:
    https://coolstory.dev/app`);
@@ -269,7 +272,8 @@ export async function startDesktopServer() {
           sendJson(res, payload, response.status);
           return;
         }
-        await openExternal(payload.verification_uri_complete);
+        const opened = await openExternal(payload.verification_uri_complete);
+        payload.browser_opened = opened;
         sendJson(res, payload);
         return;
       }
@@ -486,7 +490,7 @@ async function openExternal(url) {
     try {
       const { shell } = await import("electron");
       await shell.openExternal(url);
-      return;
+      return true;
     } catch {
       // Fall back to OS launch below.
     }
@@ -498,6 +502,7 @@ async function openExternal(url) {
     console.log(`Open this URL in your browser: ${url}`);
   });
   child.unref();
+  return true;
 }
 
 function openAppWindow(url) {
@@ -841,10 +846,10 @@ function desktopHtml() {
   <div class="stage">
     <div class="app">
       <header class="topbar">
-        <div class="app-title"><strong>CoolStory</strong><span id="contextRepo">Desktop</span> · <span class="branch" id="contextBranch">connect a session</span></div>
+        <div class="app-title"><strong>CoolStory</strong><span id="contextRepo">Desktop</span> - <span class="branch" id="contextBranch">connect a session</span></div>
         <div class="top-actions">
-          <button class="icon-button" id="toggleLeft" title="Collapse artifact navigation">☰</button>
-          <button class="icon-button" id="toggleRight" title="Collapse inspector">◨</button>
+          <button class="icon-button" id="toggleLeft" title="Collapse artifact navigation">Nav</button>
+          <button class="icon-button" id="toggleRight" title="Collapse inspector">Info</button>
           <div class="avatars" id="profileAvatars" aria-label="Active collaborators">
             <span class="avatar cyan" id="profileAvatar">CS</span>
           </div>
@@ -855,13 +860,13 @@ function desktopHtml() {
           <div class="nav-section">Workspace</div>
           <nav>
             <button data-view="home" class="active">Workspace</button>
-            <button data-view="projects">Repos</button>
+            <button data-view="projects">Projects</button>
             <button data-view="checkpoints">Checkpoints</button>
             <button data-view="quickstart">Quickstart</button>
             <button data-view="settings">Settings</button>
           </nav>
           <div class="nav-section">Artifact Types</div>
-          <div id="artifactTypeNav" class="nav-list"><button disabled>Load a repo</button></div>
+          <div id="artifactTypeNav" class="nav-list"><button disabled>Load a project</button></div>
           <div class="nav-section">Artifacts</div>
           <div id="sidebarArtifactNav" class="nav-list"><button disabled>No artifacts loaded</button></div>
           <div class="sidebar-footer">
@@ -878,10 +883,10 @@ function desktopHtml() {
               <div class="checkpoint">
                 <div><strong id="workspaceStatus">+ waiting for authenticated workspace</strong></div>
                 <div id="workspaceDetail">No project is loaded in this desktop session yet.</div>
-                <div class="ai" id="workspaceAction">✦ Connect, then load repos to start agent work.</div>
+                <div class="ai" id="workspaceAction">AI: Connect, then load projects to start agent work.</div>
               </div>
               <div class="actions hero-actions">
-                <button class="primary" data-jump="projects">Open repos</button>
+                <button class="primary" data-jump="projects">Open projects</button>
                 <button class="secondary" data-jump="quickstart">Quickstart</button>
               </div>
               <div class="panel-grid">
@@ -894,7 +899,7 @@ function desktopHtml() {
                 <div class="card">
                   <h2>Agent Context</h2>
                   <p>Browse company-scoped projects, artifacts, checkpoints, and branch guidance from the authenticated CoolStory API.</p>
-                  <button class="secondary" data-jump="projects">Open repos</button>
+                  <button class="secondary" data-jump="projects">Open projects</button>
                 </div>
                 <div class="card wide hide" id="authPanel">
                   <h2>Approve Connection</h2>
@@ -903,15 +908,16 @@ function desktopHtml() {
                     <span class="pill mono" id="userCode"></span>
                     <span class="pill" id="authStatus">Waiting for approval</span>
                   </div>
+                  <p style="margin-top:12px"><a id="approvalLink" href="#" target="_blank" rel="noreferrer">Open approval page</a></p>
                 </div>
               </div>
             </section>
             <section id="projects" class="hide">
-              <p class="doc-path" id="reposPath">repos</p>
-              <h1>Repos</h1>
+              <p class="doc-path" id="reposPath">projects</p>
+              <h1>Projects</h1>
               <p class="lede">Load only the projects your Auth0 organization and CoolStory permissions allow this desktop client to see.</p>
               <div class="row" style="margin-bottom:14px">
-                <button class="primary" id="loadProjects">Load repos</button>
+                <button class="primary" id="loadProjects">Load projects</button>
                 <select id="projectSelect"></select>
                 <button class="secondary" id="loadPrds">Load artifacts</button>
               </div>
@@ -929,9 +935,9 @@ function desktopHtml() {
             <section id="artifacts" class="hide">
               <p class="doc-path" id="artifactsPath">artifacts</p>
               <h1>Artifacts</h1>
-              <p class="lede">Select a repo, then load the PRDs and artifacts available to your CoolStory session.</p>
+              <p class="lede">Select a project, then load the artifacts available to your CoolStory session.</p>
               <div class="row" style="margin-bottom:14px">
-                <button class="primary" data-jump="projects">Choose repo</button>
+                <button class="primary" data-jump="projects">Choose project</button>
                 <button class="secondary" id="loadArtifactsView">Load artifacts</button>
               </div>
               <div class="card">
@@ -953,9 +959,9 @@ function desktopHtml() {
             <section id="checkpoints" class="hide">
               <p class="doc-path" id="checkpointsPath">checkpoints</p>
               <h1>Checkpoints</h1>
-              <p class="lede">Review branch checkpoints for the selected repo using the same backend endpoint as the CLI.</p>
+              <p class="lede">Review branch checkpoints for the selected project using the same backend endpoint as the CLI.</p>
               <div class="row" style="margin-bottom:14px">
-                <button class="primary" data-jump="projects">Choose repo</button>
+                <button class="primary" data-jump="projects">Choose project</button>
                 <button class="secondary" id="loadCheckpoints">Load checkpoints</button>
               </div>
               <div class="card">
@@ -966,7 +972,7 @@ function desktopHtml() {
             <section id="quickstart" class="hide">
               <p class="doc-path">agent/quickstart.md</p>
               <h1>Quickstart</h1>
-              <p class="lede">Common ways to use CoolStory with an agent, from PRD capture to checkpoint review and branch handoff.</p>
+              <p class="lede">Common ways to use CoolStory with an agent, from artifact capture to checkpoint review and branch handoff.</p>
               <div id="quickstartList" class="list"></div>
             </section>
             <section id="settings" class="hide">
@@ -1038,10 +1044,10 @@ function desktopHtml() {
       $("railState").textContent = state.status.authenticated ? "Synced" : "Local app";
       $("contextBranch").textContent = state.status.authenticated ? "session connected" : "connect a session";
       $("homeTitle").textContent = state.status.authenticated ? "Workspace Ready" : "Connect CoolStory";
-      $("homeLead").textContent = state.status.authenticated ? "Choose a repo to load project artifacts, branch context, checkpoints, and agent handoff data." : "Authenticate in your browser, choose a company project, and load the artifacts your account is allowed to access.";
+      $("homeLead").textContent = state.status.authenticated ? "Choose a project to load artifacts, branch context, checkpoints, and agent handoff data." : "Authenticate in your browser, choose a company project, and load the artifacts your account is allowed to access.";
       $("workspaceStatus").textContent = state.status.authenticated ? "+ authenticated workspace ready" : "+ waiting for authenticated workspace";
-      $("workspaceDetail").textContent = state.status.authenticated ? "No repo is selected yet." : "No project is loaded in this desktop session yet.";
-      $("workspaceAction").textContent = state.status.authenticated ? "✦ Load repos to start agent work." : "✦ Connect, then load repos to start agent work.";
+      $("workspaceDetail").textContent = state.status.authenticated ? "No project is selected yet." : "No project is loaded in this desktop session yet.";
+      $("workspaceAction").textContent = state.status.authenticated ? "AI: Load projects to start agent work." : "AI: Connect, then load projects to start agent work.";
       const name = state.status.profile?.display_name || state.status.profile?.email || "CS";
       renderAvatars([{ display_name: name, avatar_url: state.status.profile?.avatar_url || null }]);
     }
@@ -1051,7 +1057,8 @@ function desktopHtml() {
         $("authStatus").textContent = "Opening browser approval";
         const started = await api("/api/auth/start", { method: "POST", body: JSON.stringify({ apiUrl: $("apiUrl").value }) });
         $("userCode").textContent = started.user_code;
-        $("authStatus").textContent = "Waiting for approval";
+        $("approvalLink").href = started.verification_uri_complete || started.verification_uri || "#";
+        $("authStatus").textContent = started.browser_opened ? "Waiting for approval" : "Open approval page";
         clearInterval(state.pollTimer);
         state.pollTimer = setInterval(() => pollAuth(started.device_code), Math.max(2, started.interval || 5) * 1000);
         pollAuth(started.device_code);
@@ -1083,7 +1090,7 @@ function desktopHtml() {
         const data = await api("/api/repos");
         const repos = data.repos || [];
         state.repos = repos;
-        $("projectList").innerHTML = repos.map((repo) => '<div class="item" data-repo="' + escapeHtml(repo.slug) + '"><strong>' + escapeHtml(repo.name) + '</strong><div class="mono">' + escapeHtml(repo.slug) + ' · ' + escapeHtml(repo.default_branch) + ' · ' + escapeHtml(repo.visibility || "project") + '</div><div class="mono">' + (repo.members || []).slice(0, 4).map((member) => escapeHtml(member.display_name || "CoolStory user")).join(" · ") + '</div></div>').join("") || '<p>No projects found.</p>';
+        $("projectList").innerHTML = repos.map((repo) => '<div class="item" data-repo="' + escapeHtml(repo.slug) + '"><strong>' + escapeHtml(repo.name) + '</strong><div class="mono">' + escapeHtml(repo.slug) + ' - ' + escapeHtml(repo.default_branch) + ' - ' + escapeHtml(repo.visibility || "project") + '</div><div class="mono">' + (repo.members || []).slice(0, 4).map((member) => escapeHtml(member.display_name || "CoolStory user")).join(" - ") + '</div></div>').join("") || '<p>No projects found.</p>';
         $("projectSelect").innerHTML = repos.map((repo) => '<option value="' + escapeHtml(repo.slug) + '">' + escapeHtml(repo.name) + '</option>').join("");
         $("activityRail").innerHTML = '<div class="inspector-card"><div class="meta">Projects</div><div class="body-text">' + repos.length + ' available project' + (repos.length === 1 ? '' : 's') + ' loaded for this session.</div></div>';
         if (repos[0]) setSelectedRepo(repos[0].slug, repos[0].name, repos[0].default_branch);
@@ -1105,8 +1112,8 @@ function desktopHtml() {
     }
     async function loadPrds(repo) {
       if (!repo) {
-        $("artifactViewList").innerHTML = '<p>Choose a repo first.</p>';
-        $("prdList").innerHTML = '<p>Choose a repo first.</p>';
+        $("artifactViewList").innerHTML = '<p>Choose a project first.</p>';
+        $("prdList").innerHTML = '<p>Choose a project first.</p>';
         return;
       }
       try {
@@ -1142,8 +1149,8 @@ function desktopHtml() {
     }
     function renderArtifactLists(repo) {
       const filtered = state.artifactFilter === "all" ? state.artifacts : state.artifacts.filter((item) => (item.kind || "artifact") === state.artifactFilter);
-      const html = filtered.map((prd) => '<div class="item" data-prd="' + escapeHtml(prd.slug) + '"><strong>' + escapeHtml(prd.title) + '</strong><div class="mono">' + escapeHtml(artifactLabel(prd.kind)) + ' · ' + escapeHtml(prd.slug) + ' · ' + escapeHtml(prd.status) + ' · ' + escapeHtml(prd.branch_name) + '</div></div>').join("") || '<p>No artifacts found.</p>';
-      const navHtml = filtered.map((prd) => '<button data-nav-prd="' + escapeHtml(prd.slug) + '">' + escapeHtml(artifactLabel(prd.kind)) + ' · ' + escapeHtml(prd.title) + '</button>').join("") || '<button disabled>No artifacts</button>';
+      const html = filtered.map((prd) => '<div class="item" data-prd="' + escapeHtml(prd.slug) + '"><strong>' + escapeHtml(prd.title) + '</strong><div class="mono">' + escapeHtml(artifactLabel(prd.kind)) + ' - ' + escapeHtml(prd.slug) + ' - ' + escapeHtml(prd.status) + ' - ' + escapeHtml(prd.branch_name) + '</div></div>').join("") || '<p>No artifacts found.</p>';
+      const navHtml = filtered.map((prd) => '<button data-nav-prd="' + escapeHtml(prd.slug) + '">' + escapeHtml(artifactLabel(prd.kind)) + ' - ' + escapeHtml(prd.title) + '</button>').join("") || '<button disabled>No artifacts</button>';
       $("prdList").innerHTML = html;
       $("artifactViewList").innerHTML = html;
       $("sidebarArtifactNav").innerHTML = navHtml;
@@ -1158,7 +1165,7 @@ function desktopHtml() {
       try {
         const data = await api("/api/checkpoints?repo=" + encodeURIComponent(repo));
         const checkpoints = data.checkpoints || [];
-        $("checkpointList").innerHTML = checkpoints.map((checkpoint) => '<div class="item"><strong>' + escapeHtml(checkpoint.title || checkpoint.branch) + '</strong><div class="mono">' + escapeHtml(checkpoint.status) + ' · ' + escapeHtml(checkpoint.branch) + ' · ' + escapeHtml(checkpoint.commit_sha || "pending") + '</div></div>').join("") || '<p>No checkpoints found.</p>';
+        $("checkpointList").innerHTML = checkpoints.map((checkpoint) => '<div class="item"><strong>' + escapeHtml(checkpoint.title || checkpoint.branch) + '</strong><div class="mono">' + escapeHtml(checkpoint.status) + ' - ' + escapeHtml(checkpoint.branch) + ' - ' + escapeHtml(checkpoint.commit_sha || "pending") + '</div></div>').join("") || '<p>No checkpoints found.</p>';
         $("activityRail").innerHTML = '<div class="inspector-card"><div class="meta">Checkpoints</div><div class="body-text">' + checkpoints.length + ' checkpoint' + (checkpoints.length === 1 ? '' : 's') + ' loaded for ' + escapeHtml(repo) + '.</div></div>';
       } catch (error) {
         $("checkpointList").innerHTML = '<p>' + escapeHtml(error.message) + '</p>';
@@ -1173,7 +1180,7 @@ function desktopHtml() {
       $("artifactEditor").value = state.editorContent;
       $("editorTitle").textContent = data.prd.title || prd;
       $("editorPath").textContent = "repos/" + repo + "/artifacts/" + prd;
-      $("editorMeta").textContent = data.prd.status + " · " + data.prd.branch_name;
+      $("editorMeta").textContent = data.prd.status + " - " + data.prd.branch_name;
       $("editorSync").textContent = "+ live collaborative editor";
       $("editorRevision").textContent = "rev " + state.editorRevision;
       clearInterval(state.editorPoll);
@@ -1294,9 +1301,9 @@ function desktopHtml() {
       $("homePath").textContent = slug ? "repos/" + slug : "desktop/session";
       $("artifactsPath").textContent = slug ? "repos/" + slug + "/artifacts" : "artifacts";
       $("checkpointsPath").textContent = slug ? "repos/" + slug + "/checkpoints" : "checkpoints";
-      $("workspaceStatus").textContent = slug ? "+ repo selected" : "+ authenticated workspace ready";
-      $("workspaceDetail").textContent = slug ? "Loaded " + (name || slug) + " into this desktop session." : "No repo is selected yet.";
-      $("workspaceAction").textContent = "✦ Load artifacts, checkpoints, or branch context from the repo view.";
+      $("workspaceStatus").textContent = slug ? "+ project selected" : "+ authenticated workspace ready";
+      $("workspaceDetail").textContent = slug ? "Loaded " + (name || slug) + " into this desktop session." : "No project is selected yet.";
+      $("workspaceAction").textContent = "AI: Load artifacts, checkpoints, or branch context from the project view.";
     }
     refreshStatus().catch((error) => { $("sidebarStatus").textContent = error.message; });
   </script>
