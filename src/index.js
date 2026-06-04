@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { createServer } from "node:http";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { createWriteStream } from "node:fs";
+import { createWriteStream, existsSync } from "node:fs";
 import { homedir, hostname } from "node:os";
 import { dirname, join } from "node:path";
 import { spawn } from "node:child_process";
@@ -307,7 +307,7 @@ async function gui() {
   const port = typeof address === "object" && address ? address.port : 0;
   const url = `http://127.0.0.1:${port}/`;
   console.log(`CoolStory desktop client is running at ${url}`);
-  openExternal(url);
+  openAppWindow(url);
 }
 
 async function requireAuth() {
@@ -434,6 +434,59 @@ function openExternal(url) {
     console.log(`Open this URL in your browser: ${url}`);
   });
   child.unref();
+}
+
+function openAppWindow(url) {
+  const launched = process.platform === "win32"
+    ? openWindowsAppWindow(url)
+    : process.platform === "darwin"
+      ? openMacAppWindow(url)
+      : openLinuxAppWindow(url);
+  if (!launched) openExternal(url);
+}
+
+function openWindowsAppWindow(url) {
+  const local = process.env.LOCALAPPDATA ?? "";
+  const programFiles = process.env.PROGRAMFILES ?? "C:\\Program Files";
+  const programFilesX86 = process.env["PROGRAMFILES(X86)"] ?? "C:\\Program Files (x86)";
+  const candidates = [
+    join(programFilesX86, "Microsoft", "Edge", "Application", "msedge.exe"),
+    join(programFiles, "Microsoft", "Edge", "Application", "msedge.exe"),
+    join(programFiles, "Google", "Chrome", "Application", "chrome.exe"),
+    join(programFilesX86, "Google", "Chrome", "Application", "chrome.exe"),
+    join(local, "Google", "Chrome", "Application", "chrome.exe"),
+  ];
+  for (const exe of candidates) {
+    if (!exe || !existsSync(exe)) continue;
+    spawn(exe, [`--app=${url}`, "--new-window"], { detached: true, stdio: "ignore" }).unref();
+    return true;
+  }
+  return false;
+}
+
+function openMacAppWindow(url) {
+  for (const app of ["Google Chrome", "Microsoft Edge"]) {
+    if (!existsSync(`/Applications/${app}.app`) && !existsSync(join(homedir(), "Applications", `${app}.app`))) continue;
+    const child = spawn("open", ["-na", app, "--args", `--app=${url}`], { detached: true, stdio: "ignore" });
+    child.on("error", () => {});
+    child.unref();
+    return true;
+  }
+  return false;
+}
+
+function openLinuxAppWindow(url) {
+  for (const command of ["google-chrome", "microsoft-edge", "chromium", "chromium-browser"]) {
+    try {
+      const child = spawn(command, [`--app=${url}`], { detached: true, stdio: "ignore" });
+      child.on("error", () => {});
+      child.unref();
+      return true;
+    } catch {
+      // Try the next browser command.
+    }
+  }
+  return false;
 }
 
 function quickstartSteps() {
