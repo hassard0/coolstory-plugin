@@ -468,7 +468,7 @@ async function readJson(req) {
 function openExternal(url) {
   const command = process.platform === "win32" ? "explorer.exe" : process.platform === "darwin" ? "open" : "xdg-open";
   const args = [url];
-  const child = spawn(command, args, { detached: true, stdio: "ignore" });
+  const child = spawn(command, args, { detached: true, stdio: "ignore", windowsHide: true });
   child.on("error", () => {
     console.log(`Open this URL in your browser: ${url}`);
   });
@@ -497,7 +497,7 @@ function openWindowsAppWindow(url) {
   ];
   for (const exe of candidates) {
     if (!exe || !existsSync(exe)) continue;
-    spawn(exe, [`--app=${url}`, "--new-window", "--window-size=1500,900", "--window-position=80,40"], { detached: true, stdio: "ignore" }).unref();
+    spawn(exe, [`--app=${url}`, "--new-window", "--window-size=1500,900", "--window-position=80,40"], { detached: true, stdio: "ignore", windowsHide: true }).unref();
     return true;
   }
   return false;
@@ -506,7 +506,7 @@ function openWindowsAppWindow(url) {
 function openMacAppWindow(url) {
   for (const app of ["Google Chrome", "Microsoft Edge"]) {
     if (!existsSync(`/Applications/${app}.app`) && !existsSync(join(homedir(), "Applications", `${app}.app`))) continue;
-    const child = spawn("open", ["-na", app, "--args", `--app=${url}`, "--window-size=1500,900"], { detached: true, stdio: "ignore" });
+    const child = spawn("open", ["-na", app, "--args", `--app=${url}`, "--window-size=1500,900"], { detached: true, stdio: "ignore", windowsHide: true });
     child.on("error", () => {});
     child.unref();
     return true;
@@ -517,7 +517,7 @@ function openMacAppWindow(url) {
 function openLinuxAppWindow(url) {
   for (const command of ["google-chrome", "microsoft-edge", "chromium", "chromium-browser"]) {
     try {
-      const child = spawn(command, [`--app=${url}`, "--window-size=1500,900"], { detached: true, stdio: "ignore" });
+      const child = spawn(command, [`--app=${url}`, "--window-size=1500,900"], { detached: true, stdio: "ignore", windowsHide: true });
       child.on("error", () => {});
       child.unref();
       return true;
@@ -1058,7 +1058,7 @@ function desktopHtml() {
           <span class="dot green"></span>
         </div>
         <div class="repo-title"><span class="branch-icon">⌘</span> <span id="contextRepo">CoolStory Desktop</span> · <strong id="contextBranch">connect a session</strong></div>
-        <div class="avatars" aria-label="Active collaborators">
+        <div class="avatars" id="profileAvatars" aria-label="Active collaborators">
           <span class="avatar cyan" id="profileAvatar">CS</span>
         </div>
       </header>
@@ -1209,7 +1209,7 @@ function desktopHtml() {
     </div>
   </div>
   <script>
-    const state = { status: null, pollTimer: null };
+    const state = { status: null, pollTimer: null, repos: [], selectedRepo: null, selectedArtifact: null, editorContent: "", editorRevision: 0, editorPoll: null, editorBusy: false, editorQueuedContent: null };
     const $ = (id) => document.getElementById(id);
     document.querySelectorAll("nav button").forEach((button) => button.addEventListener("click", () => show(button.dataset.view)));
     document.querySelectorAll("[data-jump]").forEach((button) => button.addEventListener("click", () => show(button.dataset.jump)));
@@ -1250,7 +1250,7 @@ function desktopHtml() {
       $("workspaceDetail").textContent = state.status.authenticated ? "No repo is selected yet." : "No project is loaded in this desktop session yet.";
       $("workspaceAction").textContent = state.status.authenticated ? "✦ Load repos to start agent work." : "✦ Connect, then load repos to start agent work.";
       const name = state.status.profile?.display_name || state.status.profile?.email || "CS";
-      $("profileAvatar").textContent = initials(name);
+      renderAvatars([{ display_name: name, avatar_url: state.status.profile?.avatar_url || null }]);
     }
     async function startAuth() {
       try {
@@ -1290,7 +1290,7 @@ function desktopHtml() {
         const data = await api("/api/repos");
         const repos = data.repos || [];
         state.repos = repos;
-        $("projectList").innerHTML = repos.map((repo) => '<div class="item" data-repo="' + escapeHtml(repo.slug) + '"><strong>' + escapeHtml(repo.name) + '</strong><div class="mono">' + escapeHtml(repo.slug) + ' · ' + escapeHtml(repo.default_branch) + '</div></div>').join("") || '<p>No projects found.</p>';
+        $("projectList").innerHTML = repos.map((repo) => '<div class="item" data-repo="' + escapeHtml(repo.slug) + '"><strong>' + escapeHtml(repo.name) + '</strong><div class="mono">' + escapeHtml(repo.slug) + ' · ' + escapeHtml(repo.default_branch) + ' · ' + escapeHtml(repo.visibility || "project") + '</div><div class="mono">' + (repo.members || []).slice(0, 4).map((member) => escapeHtml(member.display_name || "CoolStory user")).join(" · ") + '</div></div>').join("") || '<p>No projects found.</p>';
         $("projectSelect").innerHTML = repos.map((repo) => '<option value="' + escapeHtml(repo.slug) + '">' + escapeHtml(repo.name) + '</option>').join("");
         $("activityRail").innerHTML = '<div class="comment green"><div class="meta">Repos</div><div class="body-text">' + repos.length + ' available project' + (repos.length === 1 ? '' : 's') + ' loaded for this session.</div></div>';
         if (repos[0]) setSelectedRepo(repos[0].slug, repos[0].name, repos[0].default_branch);
@@ -1319,7 +1319,7 @@ function desktopHtml() {
       try {
         const data = await api("/api/prds?repo=" + encodeURIComponent(repo));
         const prds = data.prds || [];
-        const html = prds.map((prd) => '<div class="item" data-prd="' + escapeHtml(prd.slug) + '"><strong>' + escapeHtml(prd.title) + '</strong><div class="mono">' + escapeHtml(prd.slug) + ' · ' + escapeHtml(prd.status) + ' · ' + escapeHtml(prd.branch_name) + '</div></div>').join("") || '<p>No artifacts found.</p>';
+        const html = prds.map((prd) => '<div class="item" data-prd="' + escapeHtml(prd.slug) + '"><strong>' + escapeHtml(prd.title) + '</strong><div class="mono">' + escapeHtml(artifactLabel(prd.kind)) + ' · ' + escapeHtml(prd.slug) + ' · ' + escapeHtml(prd.status) + ' · ' + escapeHtml(prd.branch_name) + '</div></div>').join("") || '<p>No artifacts found.</p>';
         $("prdList").innerHTML = html;
         $("artifactViewList").innerHTML = html;
         document.querySelectorAll("[data-prd]").forEach((el) => el.addEventListener("click", () => openArtifactEditor(repo, el.dataset.prd)));
@@ -1447,10 +1447,26 @@ function desktopHtml() {
       const parts = String(value || "CS").trim().split(/\\s+|@/).filter(Boolean);
       return parts.slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "CS";
     }
+    function artifactLabel(kind) {
+      const labels = { prd: "PRD", architecture: "Architecture", design: "Design", decision: "Decision", note: "Note" };
+      return labels[kind] || kind || "Artifact";
+    }
+    function renderAvatars(members) {
+      const colors = ["cyan", "yellow", "green"];
+      const html = (members || []).slice(0, 5).map((member, index) => {
+        const label = initials(member.display_name || member.email || "CS");
+        const title = escapeHtml(member.display_name || "CoolStory user");
+        if (member.avatar_url) return '<span class="avatar ' + colors[index % colors.length] + '" title="' + title + '" style="background-image:url(' + escapeHtml(member.avatar_url) + ');background-size:cover;background-position:center;color:transparent">' + escapeHtml(label) + '</span>';
+        return '<span class="avatar ' + colors[index % colors.length] + '" title="' + title + '">' + escapeHtml(label) + '</span>';
+      }).join("");
+      $("profileAvatars").innerHTML = html || '<span class="avatar cyan">CS</span>';
+    }
     function setSelectedRepo(slug, name, branch) {
+      const repo = state.repos.find((item) => item.slug === slug);
       $("contextRepo").textContent = name || slug || "CoolStory Desktop";
       $("contextBranch").textContent = branch || "repo selected";
       state.selectedRepo = slug ? { slug, name, default_branch: branch } : null;
+      renderAvatars(repo?.members?.length ? repo.members : [{ display_name: state.status?.profile?.display_name || "CS", avatar_url: state.status?.profile?.avatar_url || null }]);
       $("homePath").textContent = slug ? "repos/" + slug : "desktop/session";
       $("artifactsPath").textContent = slug ? "repos/" + slug + "/artifacts" : "artifacts";
       $("checkpointsPath").textContent = slug ? "repos/" + slug + "/checkpoints" : "checkpoints";
