@@ -98,6 +98,8 @@ export COOLSTORY_TOKEN=cs_pat_xxxxxxxxxxxxxxxx
 
 ```bash
 coolstory quickstart
+coolstory skills
+coolstory context <repo-slug> [artifact-slug]
 coolstory whoami
 coolstory repos list
 coolstory artifacts list <repo-slug>
@@ -130,6 +132,7 @@ Push a BMAD-created Markdown file back as a CoolStory artifact:
 
 ```bash
 coolstory artifacts push my-project docs/payment-prd.md --kind prd --branch feature/payments
+coolstory artifacts update my-project docs/payment-prd.md --slug payment-prd --kind prd --branch feature/payments
 ```
 
 Fetch an artifact as JSON for custom tooling:
@@ -147,6 +150,7 @@ Recommended agent loop:
 1. Discover the project and artifact:
 
    ```bash
+   coolstory context <repo-slug> <artifact-slug>
    coolstory repos list
    coolstory artifacts list <repo-slug>
    coolstory artifacts get <repo-slug> <artifact-slug>

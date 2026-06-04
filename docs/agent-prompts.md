@@ -27,6 +27,7 @@ Suggested command sequence:
 
 ```bash
 coolstory artifacts get <repo-slug> <artifact-slug>
+coolstory context <repo-slug> <artifact-slug>
 git checkout -b feature/<short-name>
 # agent edits files
 coolstory artifacts push <repo-slug> <artifact-file.md> --kind prd --branch feature/<short-name>

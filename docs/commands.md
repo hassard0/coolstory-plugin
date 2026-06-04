@@ -5,6 +5,8 @@
 ```bash
 coolstory --help
 coolstory quickstart
+coolstory skills
+coolstory context <repo-slug> [artifact-slug]
 ```
 
 `coolstory` is the canonical command for BMAD agents, automation, and terminal workflows.
@@ -57,11 +59,27 @@ coolstory artifacts list <repo-slug>
 coolstory artifacts get <repo-slug> <artifact-slug>
 coolstory artifacts get <repo-slug> <artifact-slug> --json
 coolstory artifacts push <repo-slug> <file.md> [--title "..."] [--kind prd] [--branch main] [--slug slug]
+coolstory artifacts create <repo-slug> <file.md> [--title "..."] [--kind prd] [--branch main] [--slug slug]
+coolstory artifacts update <repo-slug> <file.md> [--title "..."] [--kind prd] [--branch main] [--slug slug]
 ```
 
 `coolstory prds ...` remains available as a compatibility alias for existing PRD-only workflows.
 
 `artifacts push` creates or updates the CoolStory artifact matching the inferred or supplied slug. Use it when BMAD creates a local Markdown artifact that should appear in the web artifact library.
+
+`artifacts create` and `artifacts update` are explicit aliases for agent prompts that prefer intent-specific commands. The server still performs a safe upsert and reports whether the artifact was created or updated.
+
+## Context And Skills
+
+```bash
+coolstory context <repo-slug>
+coolstory context <repo-slug> <artifact-slug>
+coolstory skills
+```
+
+`context` prints JSON containing repo metadata, refs, artifacts, and optionally a full artifact body.
+
+`skills` prints `SKILLS.md`, the BMAD client contract packaged with the CLI.
 
 ## Checkpoints
 

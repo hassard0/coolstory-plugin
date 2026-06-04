@@ -36,6 +36,7 @@ coolstory repos list
 
 ```bash
 coolstory repos list
+coolstory context <repo-slug>
 coolstory artifacts list <repo-slug>
 coolstory artifacts get <repo-slug> <artifact-slug>
 ```

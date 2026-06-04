@@ -3,13 +3,15 @@ import { createServer } from "node:http";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { createWriteStream, existsSync } from "node:fs";
 import { homedir, hostname } from "node:os";
-import { basename, dirname, join } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { spawn } from "node:child_process";
 import { Writable } from "node:stream";
+import { fileURLToPath } from "node:url";
 
-const VERSION = "0.1.8";
+const VERSION = "0.1.9";
 const DEFAULT_API_URL = "https://coolstory.dev";
 const CONFIG_PATH = join(homedir(), ".coolstory", "plugin.json");
+const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 const commands = {
   "--help": help,
@@ -24,6 +26,9 @@ const commands = {
   "prds": prds,
   "checkpoints": checkpoints,
   "checkpoint": checkpoint,
+  "context": context,
+  "skills": skills,
+  "skill": skills,
   "quickstart": quickstart,
   "gui": gui,
 };
@@ -52,10 +57,14 @@ Usage:
   coolstory artifacts list <repo>
   coolstory artifacts get <repo> <artifact> [--json]
   coolstory artifacts push <repo> <file.md> [--title "..."] [--kind prd] [--branch main] [--slug slug]
+  coolstory artifacts create <repo> <file.md> [--title "..."] [--kind prd] [--branch main] [--slug slug]
+  coolstory artifacts update <repo> <file.md> [--title "..."] [--kind prd] [--branch main] [--slug slug]
   coolstory prds list <repo>                         # legacy alias
   coolstory prds get <repo> <prd> [--json]            # legacy alias
   coolstory checkpoints list <repo>
   coolstory checkpoint <title> --repo <repo> [--summary "..."] [--file path ...]
+  coolstory context <repo> [artifact-slug]
+  coolstory skills
   coolstory quickstart
 
 Desktop GUI:
@@ -162,7 +171,7 @@ async function prds(args) {
     console.log(response.prd?.content ?? "");
     return;
   }
-  if (subcommand === "push") {
+  if (subcommand === "push" || subcommand === "create" || subcommand === "update") {
     requireValue(repo, "repo");
     requireValue(prd, "file");
     const options = parseOptions(rest);
@@ -182,12 +191,18 @@ async function prds(args) {
       method: "POST",
       body: JSON.stringify(body),
     });
+    if (subcommand === "create" && response.created === false) {
+      console.warn(`Artifact ${response.artifact?.slug} already existed; updated existing artifact.`);
+    }
+    if (subcommand === "update" && response.created === true) {
+      console.warn(`Artifact ${response.artifact?.slug} did not exist; created new artifact.`);
+    }
     const action = response.created ? "Created" : "Updated";
     console.log(`${action} artifact ${response.artifact?.slug} (${response.artifact?.kind}) on ${response.artifact?.branch_name}`);
     if (response.commit_sha) console.log(`Commit ${response.commit_sha}`);
     return;
   }
-  throw new Error("Usage: coolstory artifacts <list|get|push>");
+  throw new Error("Usage: coolstory artifacts <list|get|push|create|update>");
 }
 
 async function checkpoints(args) {
@@ -229,6 +244,38 @@ async function checkpoint(args) {
   console.log(`Queued checkpoint ${response.checkpoint?.id ?? ""} for ${body.branch}`.trim());
 }
 
+async function context(args) {
+  const [repo, artifact] = args;
+  requireValue(repo, "repo");
+  const config = await requireAuth();
+  const [reposBody, artifactsBody, refsBody] = await Promise.all([
+    apiRequest(config, "/api/public/cli/repos"),
+    apiRequest(config, `/api/public/cli/repos/${encodeURIComponent(repo)}/prds`),
+    apiRequest(config, `/api/public/git/repos/${encodeURIComponent(repo)}/refs`).catch((error) => ({ error: error.message, refs: [] })),
+  ]);
+  const repoRow = (reposBody.repos ?? []).find((item) => item.slug === repo);
+  const body = {
+    repo: repoRow ?? artifactsBody.repo ?? { slug: repo },
+    refs: refsBody.refs ?? [],
+    artifacts: artifactsBody.prds ?? [],
+    artifact: null,
+  };
+  if (artifact) {
+    const detail = await apiRequest(config, `/api/public/cli/repos/${encodeURIComponent(repo)}/prds/${encodeURIComponent(artifact)}`);
+    body.artifact = detail.prd ?? null;
+  }
+  console.log(JSON.stringify(body, null, 2));
+}
+
+async function skills() {
+  const path = join(PACKAGE_ROOT, "SKILLS.md");
+  try {
+    console.log(await readFile(path, "utf8"));
+  } catch {
+    console.log(defaultSkillsText());
+  }
+}
+
 function quickstart() {
   console.log(`CoolStory agent quickstart
 
@@ -237,15 +284,19 @@ function quickstart() {
 
 2. Discover the project:
    coolstory repos list
+   coolstory context <repo>
    coolstory artifacts list <repo>
    coolstory artifacts get <repo> <artifact>
 
-3. Work from the artifact and cite files you changed.
+3. If you create or rewrite a Markdown artifact, push it:
+   coolstory artifacts push <repo> <artifact-file.md> --kind prd --branch <branch>
 
-4. Queue a checkpoint:
+4. Work from the artifact and cite files you changed.
+
+5. Queue a checkpoint:
    coolstory checkpoint "Implemented artifact slice" --repo <repo> --file <path>
 
-5. Open CoolStory to review branch history, comments, and PRs:
+6. Open CoolStory to review branch history, comments, and PRs:
    https://coolstory.dev/app`);
 }
 
@@ -638,6 +689,19 @@ function quickstartSteps() {
       body: "Use comments, checkpoints, history, and pull requests in the web app to collaborate with the team.",
     },
   ];
+}
+
+function defaultSkillsText() {
+  return `# CoolStory BMAD Client Skill
+
+Use CoolStory as the source of truth for BMAD artifacts, branch context, checkpoints, and review handoff.
+
+1. Authenticate with \`coolstory auth login --token <token>\` or \`COOLSTORY_TOKEN\`.
+2. Load context with \`coolstory context <repo> [artifact]\`.
+3. Read artifacts with \`coolstory artifacts get <repo> <artifact>\`.
+4. Push created or rewritten Markdown artifacts with \`coolstory artifacts push <repo> <file.md> --kind <kind> --branch <branch>\`.
+5. Queue implementation checkpoints with \`coolstory checkpoint "Title" --repo <repo> --branch <branch> --file <path>\`.
+`;
 }
 
 function desktopHtml() {
