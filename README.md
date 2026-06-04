@@ -44,12 +44,12 @@ Build locally from this repository:
 
 ```bash
 npm install
-npm run build:binary -- --targets node18-linux-x64
+npm run build:binary
 ```
 
-The generated files are written to `dist/`.
+The generated executable is written to `dist/`.
 
-Windows and macOS binaries are built by GitHub Actions on native runners. Standalone binaries target Node 18 internally for broad pkg cache support; source installs still require Node.js 20 or newer. Run the `Release Binaries` workflow or push a `v*` tag.
+Windows and macOS binaries are built by GitHub Actions on native runners using Node SEA. Source installs still require Node.js 20 or newer. Run the `Release Binaries` workflow or push a `v*` tag.
 
 ## Connect
 

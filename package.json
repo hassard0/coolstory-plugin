@@ -18,19 +18,9 @@
   ],
   "scripts": {
     "smoke": "node src/index.js --help",
-    "build:binary": "pkg . --out-path dist",
-    "build:binaries": "npm run build:binary -- --targets node18-linux-x64"
-  },
-  "pkg": {
-    "scripts": [
-      "src/**/*.js"
-    ],
-    "assets": [
-      "coolstory.plugin.json",
-      "README.md",
-      "docs/**/*.md"
-    ],
-    "outputPath": "dist"
+    "build:bundle": "esbuild src/index.js --bundle --platform=node --format=cjs --outfile=dist/sea-entry.cjs",
+    "build:binary": "npm run build:bundle && node scripts/build-sea.mjs",
+    "build:binaries": "npm run build:binary"
   },
   "keywords": [
     "coolstory",
@@ -42,6 +32,7 @@
   ],
   "license": "MIT",
   "devDependencies": {
-    "@yao-pkg/pkg": "^6.7.1"
+    "esbuild": "^0.27.0",
+    "postject": "^1.0.0-alpha.6"
   }
 }

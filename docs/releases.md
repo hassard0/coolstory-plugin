@@ -25,7 +25,7 @@ Build for the current OS:
 
 ```bash
 npm install
-npm run build:binary -- --targets node18-linux-x64
+npm run build:binary
 ```
 
 Cross-platform binaries should be produced on matching native runners through GitHub Actions.

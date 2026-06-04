@@ -53,7 +53,7 @@ If `--branch` is omitted, the plugin uses `COOLSTORY_BRANCH`, then falls back to
 
 ```bash
 npm install
-npm run build:binary -- --targets node18-linux-x64
+npm run build:binary
 ```
 
 Outputs:
@@ -63,4 +63,4 @@ Outputs:
 - `dist/coolstory-plugin-macos-arm64`
 - `dist/coolstory-plugin-linux-x64`
 
-Windows and macOS binaries are built by the `Release Binaries` GitHub Actions workflow on native runners. Standalone binaries target Node 18 internally for broad pkg cache support; source installs still require Node.js 20 or newer.
+Windows and macOS binaries are built by the `Release Binaries` GitHub Actions workflow on native runners using Node SEA. Source installs still require Node.js 20 or newer.

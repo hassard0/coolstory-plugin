@@ -4,7 +4,6 @@ import { createWriteStream } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { Writable } from "node:stream";
-import { fileURLToPath } from "node:url";
 
 const VERSION = "0.1.0";
 const DEFAULT_API_URL = "https://coolstory.dev";
@@ -306,7 +305,7 @@ function requireValue(value, name) {
   }
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (process.env.COOLSTORY_PLUGIN_LIBRARY !== "1") {
   main().catch((error) => {
     console.error(error.message);
     process.exitCode = 1;
