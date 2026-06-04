@@ -37,18 +37,19 @@ coolstory repos list
 ```bash
 coolstory repos list
 coolstory context <repo-slug>
+coolstory clone <repo-slug> ./workspace --ref main
 coolstory artifacts list <repo-slug>
 coolstory artifacts get <repo-slug> <artifact-slug>
 ```
 
-Use the CoolStory artifact content as the primary product requirement input for the BMAD agent.
+Use the CoolStory artifact content as the primary product requirement input for the BMAD agent. Use the extracted snapshot as read-only project source context unless the workflow also has a normal Git remote configured.
 
 ### 2. Prime the agent
 
 Give the agent:
 
 - the artifact fetched from CoolStory
-- the relevant local source files
+- the relevant local source files from `coolstory clone` or a normal Git checkout
 - the current Git branch name
 - the expected checkpoint title
 - any project-specific acceptance criteria

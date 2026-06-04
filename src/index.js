@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { createServer } from "node:http";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { createWriteStream, existsSync } from "node:fs";
 import { homedir, hostname } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
@@ -8,7 +8,7 @@ import { spawn } from "node:child_process";
 import { Writable } from "node:stream";
 import { fileURLToPath } from "node:url";
 
-const VERSION = "0.1.9";
+const VERSION = "0.1.10";
 const DEFAULT_API_URL = "https://coolstory.dev";
 const CONFIG_PATH = join(homedir(), ".coolstory", "plugin.json");
 const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -22,6 +22,7 @@ const commands = {
   "whoami": whoami,
   "status": status,
   "repos": repos,
+  "clone": clone,
   "artifacts": prds,
   "prds": prds,
   "checkpoints": checkpoints,
@@ -54,6 +55,8 @@ Usage:
   coolstory repos list
   coolstory repos refs <repo>
   coolstory repos archive <repo> [output.tar] [--ref main]
+  coolstory repos clone <repo> [dir] [--ref main]
+  coolstory clone <repo> [dir] [--ref main]
   coolstory artifacts list <repo>
   coolstory artifacts get <repo> <artifact> [--json]
   coolstory artifacts push <repo> <file.md> [--title "..."] [--kind prd] [--branch main] [--slug slug]
@@ -138,15 +141,29 @@ async function repos(args) {
   }
   if (subcommand === "archive") {
     requireValue(repo, "repo");
-    const options = parseOptions(rest);
+    const archiveArgs = [output, ...rest].filter(Boolean);
+    const { positional, optionArgs } = splitPositionalAndOptions(archiveArgs);
+    const options = parseOptions(optionArgs);
     const ref = options.ref ?? "main";
     const path = `/api/public/git/repos/${encodeURIComponent(repo)}/archive?ref=${encodeURIComponent(ref)}`;
-    const target = output && !output.startsWith("--") ? output : `${repo}-${ref.replace(/[^a-zA-Z0-9._-]+/g, "-")}.tar`;
+    const target = positional[0] ?? `${repo}-${ref.replace(/[^a-zA-Z0-9._-]+/g, "-")}.tar`;
     await download(config, path, target);
     console.log(`Wrote ${target}`);
     return;
   }
-  throw new Error("Usage: coolstory repos <list|refs|archive>");
+  if (subcommand === "clone") {
+    requireValue(repo, "repo");
+    await cloneRepo(config, repo, [output, ...rest].filter(Boolean));
+    return;
+  }
+  throw new Error("Usage: coolstory repos <list|refs|archive|clone>");
+}
+
+async function clone(args) {
+  const [repo, ...rest] = args;
+  requireValue(repo, "repo");
+  const config = await requireAuth();
+  await cloneRepo(config, repo, rest);
 }
 
 async function prds(args) {
@@ -509,6 +526,44 @@ async function download(config, path, target) {
   await response.body.pipeTo(Writable.toWeb(stream));
 }
 
+async function cloneRepo(config, repo, args) {
+  const { positional, optionArgs } = splitPositionalAndOptions(args);
+  const options = parseOptions(optionArgs);
+  const ref = options.ref ?? "main";
+  const directory = positional[0];
+  const targetDir = resolve(directory && !directory.startsWith("--") ? directory : repo);
+  const archiveName = `${repo}-${ref.replace(/[^a-zA-Z0-9._-]+/g, "-")}-${Date.now()}.tar`;
+  const archivePath = join(targetDir, ".coolstory", archiveName);
+  await mkdir(dirname(archivePath), { recursive: true });
+  const path = `/api/public/git/repos/${encodeURIComponent(repo)}/archive?ref=${encodeURIComponent(ref)}`;
+  await download(config, path, archivePath);
+  await extractTar(archivePath, targetDir, Boolean(options["keep-archive"]));
+  console.log(`Cloned ${repo}@${ref} into ${targetDir}`);
+}
+
+function splitPositionalAndOptions(args) {
+  const positional = [];
+  const optionArgs = [];
+  for (let index = 0; index < args.length; index += 1) {
+    const value = args[index];
+    if (value?.startsWith("--")) {
+      optionArgs.push(value);
+      if (args[index + 1] && !args[index + 1].startsWith("--")) optionArgs.push(args[++index]);
+    } else {
+      positional.push(value);
+    }
+  }
+  return { positional, optionArgs };
+}
+
+async function extractTar(archivePath, targetDir, keepArchive) {
+  await mkdir(targetDir, { recursive: true });
+  await runCommand("tar", ["-xf", archivePath, "-C", targetDir, "--strip-components=1"]);
+  if (!keepArchive) {
+    await rm(archivePath, { force: true });
+  }
+}
+
 function makeHeaders(config, auth) {
   const headers = new Headers({ Accept: "application/json" });
   if (auth && config.token) {
@@ -617,6 +672,22 @@ async function openExternal(url) {
   return true;
 }
 
+async function runCommand(command, args) {
+  const exitCode = await new Promise((resolveExit, reject) => {
+    const child = spawn(command, args, { stdio: "inherit" });
+    child.on("error", reject);
+    child.on("exit", (code, signal) => resolveExit(signal ? 1 : code ?? 1));
+  }).catch((error) => {
+    if (command === "tar") {
+      throw new Error("Unable to extract archive because `tar` is not available on PATH. Use `coolstory repos archive` and extract it manually.");
+    }
+    throw error;
+  });
+  if (exitCode !== 0) {
+    throw new Error(`${command} exited with code ${exitCode}`);
+  }
+}
+
 function openAppWindow(url) {
   const launched = process.platform === "win32"
     ? openWindowsBrowserWindow(url)
@@ -678,7 +749,7 @@ function quickstartSteps() {
     },
     {
       title: "Pick a project",
-      body: "Load company projects and choose the PRD or artifact your agent should use as context.",
+      body: "Load company projects, fetch artifact context, and clone a tenant-checked snapshot when the agent needs local source files.",
     },
     {
       title: "Work branch-first",
@@ -698,9 +769,10 @@ Use CoolStory as the source of truth for BMAD artifacts, branch context, checkpo
 
 1. Authenticate with \`coolstory auth login --token <token>\` or \`COOLSTORY_TOKEN\`.
 2. Load context with \`coolstory context <repo> [artifact]\`.
-3. Read artifacts with \`coolstory artifacts get <repo> <artifact>\`.
-4. Push created or rewritten Markdown artifacts with \`coolstory artifacts push <repo> <file.md> --kind <kind> --branch <branch>\`.
-5. Queue implementation checkpoints with \`coolstory checkpoint "Title" --repo <repo> --branch <branch> --file <path>\`.
+3. Clone source snapshots with \`coolstory clone <repo> ./workspace --ref <branch>\` when source context is needed.
+4. Read artifacts with \`coolstory artifacts get <repo> <artifact>\`.
+5. Push created or rewritten Markdown artifacts with \`coolstory artifacts push <repo> <file.md> --kind <kind> --branch <branch>\`.
+6. Queue implementation checkpoints with \`coolstory checkpoint "Title" --repo <repo> --branch <branch> --file <path>\`.
 `;
 }
 

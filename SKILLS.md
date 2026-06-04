@@ -30,7 +30,10 @@ Load project context:
 ```bash
 coolstory context <repo-slug>
 coolstory context <repo-slug> <artifact-slug>
+coolstory clone <repo-slug> ./workspace --ref main
 ```
+
+Use `clone` when the BMAD client needs local project source context. It downloads a tenant-checked snapshot from CoolStory and extracts it into the target folder.
 
 ## Artifact Workflow
 
@@ -105,4 +108,3 @@ When finishing, report:
 - Checkpoint title and result.
 - Tests run.
 - Risks, missing tests, or follow-up decisions.
-

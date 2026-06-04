@@ -1,6 +1,6 @@
 {
   "name": "coolstory-plugin",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "description": "Public CoolStory agent and CLI integration plugin.",
   "type": "module",
   "main": "electron-main.cjs",

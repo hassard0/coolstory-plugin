@@ -50,7 +50,11 @@ Shows the CoolStory profile attached to the configured token.
 coolstory repos list
 coolstory repos refs <repo-slug>
 coolstory repos archive <repo-slug> [output.tar] [--ref main]
+coolstory repos clone <repo-slug> [dir] [--ref main]
+coolstory clone <repo-slug> [dir] [--ref main]
 ```
+
+`clone` downloads the tenant-checked tar snapshot and extracts it into a local folder. It is a snapshot command for agents and BMAD workspaces, not a replacement for full Git push/fetch.
 
 ## Artifacts
 

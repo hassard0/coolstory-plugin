@@ -12,7 +12,7 @@ This repository is intentionally separate from the private CoolStory product rep
 - launch a local desktop-style GUI for project and artifact context
 - list accessible projects and repositories
 - read artifacts into an agent context
-- inspect Git refs and download authenticated snapshots
+- inspect Git refs and download or extract authenticated snapshots
 - queue implementation checkpoints against a branch
 - hand off work back to CoolStory for review, history, and pull requests
 
@@ -102,6 +102,7 @@ coolstory skills
 coolstory context <repo-slug> [artifact-slug]
 coolstory whoami
 coolstory repos list
+coolstory clone <repo-slug> ./workspace
 coolstory artifacts list <repo-slug>
 coolstory artifacts get <repo-slug> <artifact-slug>
 coolstory artifacts push <repo-slug> docs/my-bmad-artifact.md --kind prd --branch feature/my-work
@@ -120,6 +121,13 @@ Download a repository snapshot:
 
 ```bash
 coolstory repos archive my-project --ref main
+```
+
+Extract a repository snapshot into a local workspace:
+
+```bash
+coolstory clone my-project ./my-project --ref main
+coolstory repos clone my-project ./my-project --ref main
 ```
 
 Queue a checkpoint for the current branch:
@@ -151,12 +159,13 @@ Recommended agent loop:
 
    ```bash
    coolstory context <repo-slug> <artifact-slug>
+   coolstory clone <repo-slug> ./workspace --ref main
    coolstory repos list
    coolstory artifacts list <repo-slug>
    coolstory artifacts get <repo-slug> <artifact-slug>
    ```
 
-2. Load the artifact and project files into the BMAD agent context.
+2. Load the artifact and extracted project files into the BMAD agent context.
 
 3. Implement in a normal Git branch.
 
