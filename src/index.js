@@ -8,7 +8,7 @@ import { spawn } from "node:child_process";
 import { Writable } from "node:stream";
 import { fileURLToPath } from "node:url";
 
-const VERSION = "0.1.13";
+const VERSION = "0.1.14";
 const DEFAULT_API_URL = "https://coolstory.dev";
 const CONFIG_PATH = join(homedir(), ".coolstory", "plugin.json");
 const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -24,6 +24,8 @@ const commands = {
   "repos": repos,
   "clone": clone,
   "branches": branches,
+  "pulls": pulls,
+  "prs": pulls,
   "artifacts": prds,
   "prds": prds,
   "checkpoints": checkpoints,
@@ -60,6 +62,8 @@ Usage:
   coolstory clone <repo> [dir] [--ref main]
   coolstory branches list <repo> [--json]
   coolstory branches create <repo> <branch> [--from main] [--json]
+  coolstory pulls list <repo> [--json]
+  coolstory pulls create <repo> --artifact <slug> --source <branch> [--target main] --title "..."
   coolstory artifacts list <repo>
   coolstory artifacts get <repo> <artifact> [--json]
   coolstory artifacts pull <repo> <artifact> [file.md] [--force]
@@ -284,6 +288,48 @@ async function prds(args) {
   throw new Error("Usage: coolstory artifacts <list|get|pull|kinds|push|create|update>");
 }
 
+async function pulls(args) {
+  const [subcommand, repo, ...rest] = args;
+  requireValue(repo, "repo");
+  const config = await requireAuth();
+  const options = parseOptions(rest);
+  if (subcommand === "list") {
+    const response = await apiRequest(config, `/api/public/cli/repos/${encodeURIComponent(repo)}/pulls`);
+    if (options.json) {
+      console.log(JSON.stringify(response, null, 2));
+      return;
+    }
+    for (const pull of response.pulls ?? []) {
+      const artifact = pull.artifact?.slug ? ` ${pull.artifact.slug}` : "";
+      console.log(`#${pull.number} ${pull.status} ${pull.source_branch}->${pull.target_branch}${artifact} ${pull.title}`);
+    }
+    return;
+  }
+  if (subcommand === "create") {
+    requireValue(options.artifact, "--artifact");
+    requireValue(options.source, "--source");
+    requireValue(options.title, "--title");
+    const body = {
+      artifact_slug: options.artifact,
+      source_branch: options.source,
+      target_branch: options.target,
+      title: options.title,
+      body: options.body || "",
+    };
+    const response = await apiRequest(config, `/api/public/cli/repos/${encodeURIComponent(repo)}/pulls`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+    if (options.json) {
+      console.log(JSON.stringify(response, null, 2));
+      return;
+    }
+    console.log(`Created pull request #${response.pull?.number} ${response.pull?.source_branch}->${response.pull?.target_branch}`);
+    return;
+  }
+  throw new Error("Usage: coolstory pulls <list|create>");
+}
+
 async function checkpoints(args) {
   const [subcommand, repo] = args;
   if (subcommand !== "list") {
@@ -309,11 +355,26 @@ async function checkpoint(args) {
   }
   const options = parseOptions(args);
   requireValue(options.repo, "--repo");
+  const files = normalizeArray(options.file);
+  const artifacts = [];
+  for (const file of files) {
+    if (!/\.md$/i.test(file)) continue;
+    const content = await readFile(file, "utf8");
+    const title = options.artifactTitle || inferMarkdownTitle(content, file);
+    artifacts.push({
+      path: file,
+      title,
+      slug: options.slug || slugify(title),
+      kind: options.kind || inferArtifactKind(file),
+      content,
+    });
+  }
   const body = {
     branch: options.branch ?? process.env.COOLSTORY_BRANCH ?? "main",
     title,
     summary: options.summary,
-    files: normalizeArray(options.file),
+    files,
+    artifacts,
   };
   const config = await requireAuth();
   const response = await apiRequest(config, `/api/public/cli/repos/${encodeURIComponent(options.repo)}/checkpoints`, {
