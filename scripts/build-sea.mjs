@@ -25,11 +25,8 @@ if (process.platform === "darwin") {
   execFileSync("codesign", ["--remove-signature", binaryPath], { stdio: "inherit" });
 }
 
-const postjectBin = process.platform === "win32"
-  ? join("node_modules", ".bin", "postject.cmd")
-  : join("node_modules", ".bin", "postject");
-
-execFileSync(postjectBin, [
+execFileSync(process.execPath, [
+  join("node_modules", "postject", "dist", "cli.js"),
   binaryPath,
   "NODE_SEA_BLOB",
   blobPath,
