@@ -18,6 +18,24 @@ GitHub Actions builds:
 
 Run the `Release Binaries` workflow manually or push a `v*` tag.
 
+The workflow must pass three gates before assets are uploaded:
+
+- CLI smoke: `npm run smoke`
+- Source desktop smoke: `npm run smoke:desktop`
+- Packaged desktop app smoke: `npm run smoke:desktop:packaged`
+
+The packaged smoke launches the built app on the native runner, verifies it opens a local Electron window, checks the landscape window size, confirms the device-code sign-in action is rendered, and asserts project, artifact type, artifact, avatar, and editor navigation elements exist.
+
+## Latest Verified Release
+
+`v0.1.5` passed packaged app smoke on:
+
+- Windows Server 2025 runner for `coolstory-desktop-win-x64.exe`
+- macOS 14 ARM runner for `coolstory-desktop-macos-arm64.zip`
+- Ubuntu 24.04 runner for `coolstory-desktop-linux-x64.AppImage`
+
+Release page: https://github.com/hassard0/coolstory-plugin/releases/tag/v0.1.5
+
 ## Local Native Build
 
 Build for the current OS:
