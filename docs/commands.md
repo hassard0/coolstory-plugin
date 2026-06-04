@@ -52,9 +52,12 @@ coolstory repos refs <repo-slug>
 coolstory repos archive <repo-slug> [output.tar] [--ref main]
 coolstory repos clone <repo-slug> [dir] [--ref main]
 coolstory clone <repo-slug> [dir] [--ref main]
+coolstory branches list <repo-slug> [--json]
 ```
 
 `clone` downloads the tenant-checked tar snapshot and extracts it into a local folder. It is a snapshot command for agents and BMAD workspaces, not a replacement for full Git push/fetch.
+
+`branches list` is the agent-friendly wrapper for branch refs. Use `--json` when feeding branch metadata into BMAD or other automation.
 
 ## Artifacts
 

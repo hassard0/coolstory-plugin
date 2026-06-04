@@ -102,6 +102,7 @@ coolstory skills
 coolstory context <repo-slug> [artifact-slug]
 coolstory whoami
 coolstory repos list
+coolstory branches list <repo-slug> --json
 coolstory clone <repo-slug> ./workspace
 coolstory artifacts list <repo-slug>
 coolstory artifacts get <repo-slug> <artifact-slug>
@@ -116,6 +117,7 @@ Inspect branch refs:
 
 ```bash
 coolstory repos refs my-project
+coolstory branches list my-project --json
 ```
 
 Download a repository snapshot:
@@ -175,6 +177,7 @@ Recommended agent loop:
    coolstory context <repo-slug> <artifact-slug>
    coolstory clone <repo-slug> ./workspace --ref main
    coolstory repos list
+   coolstory branches list <repo-slug> --json
    coolstory artifacts list <repo-slug>
    coolstory artifacts get <repo-slug> <artifact-slug>
    coolstory artifacts pull <repo-slug> <artifact-slug> docs/artifact.md

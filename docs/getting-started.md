@@ -46,6 +46,7 @@ coolstory whoami
 ```bash
 coolstory repos list
 coolstory context <repo-slug>
+coolstory branches list <repo-slug> --json
 coolstory clone <repo-slug> ./workspace --ref main
 coolstory artifacts list <repo-slug>
 coolstory artifacts get <repo-slug> <artifact-slug>

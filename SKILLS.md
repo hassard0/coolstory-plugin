@@ -30,6 +30,7 @@ Load project context:
 ```bash
 coolstory context <repo-slug>
 coolstory context <repo-slug> <artifact-slug>
+coolstory branches list <repo-slug> --json
 coolstory clone <repo-slug> ./workspace --ref main
 coolstory artifacts pull <repo-slug> <artifact-slug> docs/artifact.md
 ```

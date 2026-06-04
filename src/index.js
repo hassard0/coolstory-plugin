@@ -8,7 +8,7 @@ import { spawn } from "node:child_process";
 import { Writable } from "node:stream";
 import { fileURLToPath } from "node:url";
 
-const VERSION = "0.1.11";
+const VERSION = "0.1.12";
 const DEFAULT_API_URL = "https://coolstory.dev";
 const CONFIG_PATH = join(homedir(), ".coolstory", "plugin.json");
 const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -23,6 +23,7 @@ const commands = {
   "status": status,
   "repos": repos,
   "clone": clone,
+  "branches": branches,
   "artifacts": prds,
   "prds": prds,
   "checkpoints": checkpoints,
@@ -57,6 +58,7 @@ Usage:
   coolstory repos archive <repo> [output.tar] [--ref main]
   coolstory repos clone <repo> [dir] [--ref main]
   coolstory clone <repo> [dir] [--ref main]
+  coolstory branches list <repo> [--json]
   coolstory artifacts list <repo>
   coolstory artifacts get <repo> <artifact> [--json]
   coolstory artifacts pull <repo> <artifact> [file.md] [--force]
@@ -166,6 +168,28 @@ async function clone(args) {
   requireValue(repo, "repo");
   const config = await requireAuth();
   await cloneRepo(config, repo, rest);
+}
+
+async function branches(args) {
+  const [subcommand, repo, ...rest] = args;
+  if (subcommand !== "list") {
+    throw new Error("Usage: coolstory branches list <repo> [--json]");
+  }
+  requireValue(repo, "repo");
+  const options = parseOptions(rest);
+  const config = await requireAuth();
+  const response = await apiRequest(config, `/api/public/git/repos/${encodeURIComponent(repo)}/refs`);
+  if (options.json) {
+    console.log(JSON.stringify({
+      repo: response.repo,
+      branches: response.refs ?? [],
+    }, null, 2));
+    return;
+  }
+  for (const ref of response.refs ?? []) {
+    const marker = ref.name === response.repo?.default_branch ? "*" : " ";
+    console.log(`${marker} ${ref.name} ${ref.sha.slice(0, 12)} ${ref.archive_url}`);
+  }
 }
 
 async function prds(args) {
@@ -323,8 +347,11 @@ function quickstart() {
 2. Discover the project:
    coolstory repos list
    coolstory context <repo>
+   coolstory branches list <repo> --json
+   coolstory clone <repo> ./workspace --ref main
    coolstory artifacts list <repo>
    coolstory artifacts get <repo> <artifact>
+   coolstory artifacts pull <repo> <artifact> docs/artifact.md
 
 3. If you create or rewrite a Markdown artifact, push it:
    coolstory artifacts push <repo> <artifact-file.md> --kind prd --branch <branch>
@@ -808,9 +835,10 @@ Use CoolStory as the source of truth for BMAD artifacts, branch context, checkpo
 1. Authenticate with \`coolstory auth login --token <token>\` or \`COOLSTORY_TOKEN\`.
 2. Load context with \`coolstory context <repo> [artifact]\`.
 3. Clone source snapshots with \`coolstory clone <repo> ./workspace --ref <branch>\` when source context is needed.
-4. Read or pull artifacts with \`coolstory artifacts get <repo> <artifact>\` or \`coolstory artifacts pull <repo> <artifact>\`.
-5. Push created or rewritten Markdown artifacts with \`coolstory artifacts push <repo> <file.md> --kind <kind> --branch <branch>\`.
-6. Queue implementation checkpoints with \`coolstory checkpoint "Title" --repo <repo> --branch <branch> --file <path>\`.
+4. Inspect branches with \`coolstory branches list <repo> --json\`.
+5. Read or pull artifacts with \`coolstory artifacts get <repo> <artifact>\` or \`coolstory artifacts pull <repo> <artifact>\`.
+6. Push created or rewritten Markdown artifacts with \`coolstory artifacts push <repo> <file.md> --kind <kind> --branch <branch>\`.
+7. Queue implementation checkpoints with \`coolstory checkpoint "Title" --repo <repo> --branch <branch> --file <path>\`.
 `;
 }
 
