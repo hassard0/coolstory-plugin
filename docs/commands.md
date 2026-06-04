@@ -49,3 +49,18 @@ coolstory-plugin checkpoint "Title" --repo <repo-slug> [--branch <branch>] [--su
 
 If `--branch` is omitted, the plugin uses `COOLSTORY_BRANCH`, then falls back to `main`.
 
+## Build Binaries
+
+```bash
+npm install
+npm run build:binary -- --targets node18-linux-x64
+```
+
+Outputs:
+
+- `dist/coolstory-plugin-win-x64.exe`
+- `dist/coolstory-plugin-macos-x64`
+- `dist/coolstory-plugin-macos-arm64`
+- `dist/coolstory-plugin-linux-x64`
+
+Windows and macOS binaries are built by the `Release Binaries` GitHub Actions workflow on native runners. Standalone binaries target Node 18 internally for broad pkg cache support; source installs still require Node.js 20 or newer.

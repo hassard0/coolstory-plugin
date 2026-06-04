@@ -31,6 +31,26 @@ coolstory-plugin --help
 
 The package also exposes a `coolstory` alias, but docs use `coolstory-plugin` so it is clear this is the public integration package.
 
+## Standalone Binaries
+
+Release builds publish standalone binaries for:
+
+- Windows x64: `coolstory-plugin-win-x64.exe`
+- macOS Apple Silicon: `coolstory-plugin-macos-arm64`
+- macOS Intel: `coolstory-plugin-macos-x64`
+- Linux x64: `coolstory-plugin-linux-x64`
+
+Build locally from this repository:
+
+```bash
+npm install
+npm run build:binary -- --targets node18-linux-x64
+```
+
+The generated files are written to `dist/`.
+
+Windows and macOS binaries are built by GitHub Actions on native runners. Standalone binaries target Node 18 internally for broad pkg cache support; source installs still require Node.js 20 or newer. Run the `Release Binaries` workflow or push a `v*` tag.
+
 ## Connect
 
 Create a personal access token in CoolStory, then store it locally:
@@ -119,8 +139,13 @@ Detailed guide: [docs/bmad.md](docs/bmad.md)
 
 ## Docs
 
+- [Getting started](docs/getting-started.md)
 - [BMAD integration](docs/bmad.md)
+- [Agent prompts](docs/agent-prompts.md)
+- [Collaboration workflow](docs/collaboration.md)
+- [API examples](docs/api.md)
 - [Command reference](docs/commands.md)
+- [Releases and binaries](docs/releases.md)
 - [Security model](docs/security.md)
 - [Troubleshooting](docs/troubleshooting.md)
 

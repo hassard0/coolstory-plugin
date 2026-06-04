@@ -17,7 +17,20 @@
     "LICENSE"
   ],
   "scripts": {
-    "smoke": "node src/index.js --help"
+    "smoke": "node src/index.js --help",
+    "build:binary": "pkg . --out-path dist",
+    "build:binaries": "npm run build:binary -- --targets node18-linux-x64"
+  },
+  "pkg": {
+    "scripts": [
+      "src/**/*.js"
+    ],
+    "assets": [
+      "coolstory.plugin.json",
+      "README.md",
+      "docs/**/*.md"
+    ],
+    "outputPath": "dist"
   },
   "keywords": [
     "coolstory",
@@ -27,6 +40,8 @@
     "git",
     "prd"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@yao-pkg/pkg": "^6.7.1"
+  }
 }
-

@@ -3,6 +3,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { createWriteStream } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
+import { Writable } from "node:stream";
 import { fileURLToPath } from "node:url";
 
 const VERSION = "0.1.0";
@@ -311,4 +312,3 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     process.exitCode = 1;
   });
 }
-

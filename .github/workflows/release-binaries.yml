@@ -1,0 +1,59 @@
+name: Release Binaries
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: node18-linux-x64
+            artifact: coolstory-plugin-linux-x64
+          - os: windows-latest
+            target: node18-win-x64
+            artifact: coolstory-plugin-win-x64.exe
+          - os: macos-13
+            target: node18-macos-x64
+            artifact: coolstory-plugin-macos-x64
+          - os: macos-14
+            target: node18-macos-arm64
+            artifact: coolstory-plugin-macos-arm64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install
+        run: npm install
+
+      - name: Smoke
+        run: npm run smoke
+
+      - name: Build binaries
+        run: npx pkg . --targets ${{ matrix.target }} --out-path dist
+
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/*
+
+      - name: Publish GitHub release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
