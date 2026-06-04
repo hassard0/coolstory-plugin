@@ -1,4 +1,4 @@
-import { copyFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import { execFileSync } from "node:child_process";
 
@@ -38,4 +38,21 @@ if (process.platform === "darwin") {
   execFileSync("codesign", ["--sign", "-", binaryPath], { stdio: "inherit" });
 }
 
+if (process.platform === "win32") {
+  setWindowsSubsystem(binaryPath, 2);
+}
+
 console.log(`Built ${basename(binaryPath)}`);
+
+function setWindowsSubsystem(path, subsystem) {
+  const binary = readFileSync(path);
+  const peOffset = binary.readUInt32LE(0x3c);
+  const signature = binary.toString("ascii", peOffset, peOffset + 4);
+  if (signature !== "PE\u0000\u0000") {
+    throw new Error(`Invalid PE signature in ${path}`);
+  }
+  const optionalHeaderOffset = peOffset + 24;
+  const subsystemOffset = optionalHeaderOffset + 68;
+  binary.writeUInt16LE(subsystem, subsystemOffset);
+  writeFileSync(path, binary);
+}

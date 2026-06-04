@@ -292,6 +292,16 @@ async function gui() {
         sendJson(res, await apiRequest(config, `/api/public/cli/repos/${encodeURIComponent(repo)}/prds`));
         return;
       }
+      if (req.method === "GET" && url.pathname === "/api/checkpoints") {
+        const repo = url.searchParams.get("repo");
+        if (!repo) {
+          sendJson(res, { error: "repo is required" }, 400);
+          return;
+        }
+        const config = await requireAuth();
+        sendJson(res, await apiRequest(config, `/api/public/cli/repos/${encodeURIComponent(repo)}/checkpoints`));
+        return;
+      }
       if (req.method === "GET" && url.pathname === "/api/quickstart") {
         sendJson(res, { steps: quickstartSteps() });
         return;
@@ -424,11 +434,13 @@ async function readJson(req) {
 
 function openExternal(url) {
   const command = process.platform === "win32"
-    ? "cmd"
+    ? "powershell.exe"
     : process.platform === "darwin"
       ? "open"
       : "xdg-open";
-  const args = process.platform === "win32" ? ["/c", "start", "", url] : [url];
+  const args = process.platform === "win32"
+    ? ["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", "Start-Process", url]
+    : [url];
   const child = spawn(command, args, { detached: true, stdio: "ignore" });
   child.on("error", () => {
     console.log(`Open this URL in your browser: ${url}`);
@@ -458,7 +470,7 @@ function openWindowsAppWindow(url) {
   ];
   for (const exe of candidates) {
     if (!exe || !existsSync(exe)) continue;
-    spawn(exe, [`--app=${url}`, "--new-window"], { detached: true, stdio: "ignore" }).unref();
+    spawn(exe, [`--app=${url}`, "--new-window", "--window-size=1500,900", "--window-position=80,40"], { detached: true, stdio: "ignore" }).unref();
     return true;
   }
   return false;
@@ -467,7 +479,7 @@ function openWindowsAppWindow(url) {
 function openMacAppWindow(url) {
   for (const app of ["Google Chrome", "Microsoft Edge"]) {
     if (!existsSync(`/Applications/${app}.app`) && !existsSync(join(homedir(), "Applications", `${app}.app`))) continue;
-    const child = spawn("open", ["-na", app, "--args", `--app=${url}`], { detached: true, stdio: "ignore" });
+    const child = spawn("open", ["-na", app, "--args", `--app=${url}`, "--window-size=1500,900"], { detached: true, stdio: "ignore" });
     child.on("error", () => {});
     child.unref();
     return true;
@@ -478,7 +490,7 @@ function openMacAppWindow(url) {
 function openLinuxAppWindow(url) {
   for (const command of ["google-chrome", "microsoft-edge", "chromium", "chromium-browser"]) {
     try {
-      const child = spawn(command, [`--app=${url}`], { detached: true, stdio: "ignore" });
+      const child = spawn(command, [`--app=${url}`, "--window-size=1500,900"], { detached: true, stdio: "ignore" });
       child.on("error", () => {});
       child.unref();
       return true;
@@ -668,7 +680,7 @@ function desktopHtmlLegacy() {
     </main>
   </div>
   <script>
-    const state = { status: null, pollTimer: null };
+    const state = { status: null, pollTimer: null, repos: [], selectedRepo: null };
     const $ = (id) => document.getElementById(id);
     document.querySelectorAll("nav button").forEach((button) => button.addEventListener("click", () => show(button.dataset.view)));
     document.querySelectorAll("[data-jump]").forEach((button) => button.addEventListener("click", () => show(button.dataset.jump)));
@@ -1013,13 +1025,10 @@ function desktopHtml() {
       <div class="body">
         <aside class="sidebar">
           <nav>
+            <button data-view="home" class="active">Workspace</button>
             <button data-view="projects">Repos</button>
-            <button data-view="home" class="active">PRDs</button>
-            <button data-view="architecture">Architecture</button>
-            <button data-view="designs">Designs</button>
-            <button data-view="pulls">Pull requests</button>
-            <button data-view="decisions">Decisions</button>
-            <button data-view="ci">CI</button>
+            <button data-view="artifacts">Artifacts</button>
+            <button data-view="checkpoints">Checkpoints</button>
             <button data-view="quickstart">Quickstart</button>
             <button data-view="settings">Settings</button>
           </nav>
@@ -1085,6 +1094,32 @@ function desktopHtml() {
                 </div>
               </div>
             </section>
+            <section id="artifacts" class="hide">
+              <p class="doc-path" id="artifactsPath">artifacts</p>
+              <h1>Artifacts</h1>
+              <p class="lede">Select a repo, then load the PRDs and artifacts available to your CoolStory session.</p>
+              <div class="row" style="margin-bottom:14px">
+                <button class="primary" data-jump="projects">Choose repo</button>
+                <button class="secondary" id="loadArtifactsView">Load artifacts</button>
+              </div>
+              <div class="card">
+                <h2>Artifact List</h2>
+                <div id="artifactViewList" class="list"></div>
+              </div>
+            </section>
+            <section id="checkpoints" class="hide">
+              <p class="doc-path" id="checkpointsPath">checkpoints</p>
+              <h1>Checkpoints</h1>
+              <p class="lede">Review branch checkpoints for the selected repo using the same backend endpoint as the CLI.</p>
+              <div class="row" style="margin-bottom:14px">
+                <button class="primary" data-jump="projects">Choose repo</button>
+                <button class="secondary" id="loadCheckpoints">Load checkpoints</button>
+              </div>
+              <div class="card">
+                <h2>Checkpoint List</h2>
+                <div id="checkpointList" class="list"></div>
+              </div>
+            </section>
             <section id="quickstart" class="hide">
               <p class="doc-path">agent/quickstart.md</p>
               <h1>Quickstart</h1>
@@ -1103,33 +1138,6 @@ function desktopHtml() {
                   <button class="danger" id="logoutBtn">Clear local session</button>
                 </div>
               </div>
-            </section>
-            <section id="architecture" class="hide">
-              <p class="doc-path">architecture/system.md</p>
-              <h1>Architecture</h1>
-              <p class="lede">Company isolation, Auth0 Organizations, OpenFGA checks, Git storage, and agent handoff notes stay visible beside the work.</p>
-              <div class="checkpoint"><strong>+ secure boundary</strong><div>Auth0 org membership · OpenFGA relation checks · project-scoped Git permissions</div></div>
-            </section>
-            <section id="designs" class="hide">
-              <p class="doc-path">design/product-shell.md</p>
-              <h1>Designs</h1>
-              <p class="lede">The local client mirrors the web workspace, so authentication and agent work feel like one CoolStory surface.</p>
-            </section>
-            <section id="pulls" class="hide">
-              <p class="doc-path">git/pull-requests</p>
-              <h1>Pull requests</h1>
-              <p class="lede">Checkpoint changes to a branch, compare against main, and prepare handoff notes for review.</p>
-            </section>
-            <section id="decisions" class="hide">
-              <p class="doc-path">decisions/index.md</p>
-              <h1>Decisions</h1>
-              <p class="lede">Capture product and engineering calls where the team can tie them back to artifacts, checkpoints, and branches.</p>
-            </section>
-            <section id="ci" class="hide">
-              <p class="doc-path">ci/status</p>
-              <h1>CI</h1>
-              <p class="lede">Show branch protections, test results, and deploy readiness before a PR is proposed.</p>
-              <div class="checkpoint"><strong>+ branch protections pass</strong><div>3/3 checks green · no conflicts detected · ready for review</div></div>
             </section>
           </div>
         </main>
@@ -1157,12 +1165,16 @@ function desktopHtml() {
     $("connectBtn2").addEventListener("click", startAuth);
     $("logoutBtn").addEventListener("click", logout);
     $("loadProjects").addEventListener("click", loadProjects);
-    $("loadPrds").addEventListener("click", () => loadPrds($("projectSelect").value));
+    $("loadPrds").addEventListener("click", () => selectAndLoadArtifacts($("projectSelect").value));
+    $("loadArtifactsView").addEventListener("click", () => loadPrds(state.selectedRepo?.slug));
+    $("loadCheckpoints").addEventListener("click", () => loadCheckpoints(state.selectedRepo?.slug));
 
     function show(view) {
       document.querySelectorAll("main section").forEach((section) => section.classList.toggle("hide", section.id !== view));
       document.querySelectorAll("nav button").forEach((button) => button.classList.toggle("active", button.dataset.view === view));
       if (view === "quickstart") loadQuickstart();
+      if (view === "artifacts" && state.selectedRepo?.slug) loadPrds(state.selectedRepo.slug);
+      if (view === "checkpoints" && state.selectedRepo?.slug) loadCheckpoints(state.selectedRepo.slug);
     }
     async function api(path, options = {}) {
       const response = await fetch(path, { headers: { "content-type": "application/json" }, ...options });
@@ -1188,14 +1200,19 @@ function desktopHtml() {
       $("profileAvatar").textContent = initials(name);
     }
     async function startAuth() {
-      $("authPanel").classList.remove("hide");
-      $("authStatus").textContent = "Opening browser approval";
-      const started = await api("/api/auth/start", { method: "POST", body: JSON.stringify({ apiUrl: $("apiUrl").value }) });
-      $("userCode").textContent = started.user_code;
-      $("authStatus").textContent = "Waiting for approval";
-      clearInterval(state.pollTimer);
-      state.pollTimer = setInterval(() => pollAuth(started.device_code), Math.max(2, started.interval || 5) * 1000);
-      pollAuth(started.device_code);
+      try {
+        $("authPanel").classList.remove("hide");
+        $("authStatus").textContent = "Opening browser approval";
+        const started = await api("/api/auth/start", { method: "POST", body: JSON.stringify({ apiUrl: $("apiUrl").value }) });
+        $("userCode").textContent = started.user_code;
+        $("authStatus").textContent = "Waiting for approval";
+        clearInterval(state.pollTimer);
+        state.pollTimer = setInterval(() => pollAuth(started.device_code), Math.max(2, started.interval || 5) * 1000);
+        pollAuth(started.device_code);
+      } catch (error) {
+        $("authPanel").classList.remove("hide");
+        $("authStatus").textContent = error.message;
+      }
     }
     async function pollAuth(deviceCode) {
       try {
@@ -1216,25 +1233,62 @@ function desktopHtml() {
       await refreshStatus();
     }
     async function loadProjects() {
-      const data = await api("/api/repos");
-      const repos = data.repos || [];
-      $("projectList").innerHTML = repos.map((repo) => '<div class="item" data-repo="' + escapeHtml(repo.slug) + '"><strong>' + escapeHtml(repo.name) + '</strong><div class="mono">' + escapeHtml(repo.slug) + ' · ' + escapeHtml(repo.default_branch) + '</div></div>').join("") || '<p>No projects found.</p>';
-      $("projectSelect").innerHTML = repos.map((repo) => '<option value="' + escapeHtml(repo.slug) + '">' + escapeHtml(repo.name) + '</option>').join("");
-      $("activityRail").innerHTML = '<div class="comment green"><div class="meta">Repos</div><div class="body-text">' + repos.length + ' available project' + (repos.length === 1 ? '' : 's') + ' loaded for this session.</div></div>';
-      if (repos[0]) setSelectedRepo(repos[0].slug, repos[0].name, repos[0].default_branch);
-      document.querySelectorAll("[data-repo]").forEach((el) => el.addEventListener("click", () => {
-        const repo = state.repos.find((item) => item.slug === el.dataset.repo);
-        $("projectSelect").value = el.dataset.repo;
-        setSelectedRepo(el.dataset.repo, repo?.name || el.dataset.repo, repo?.default_branch || "");
-        loadPrds(el.dataset.repo);
-      }));
+      try {
+        const data = await api("/api/repos");
+        const repos = data.repos || [];
+        state.repos = repos;
+        $("projectList").innerHTML = repos.map((repo) => '<div class="item" data-repo="' + escapeHtml(repo.slug) + '"><strong>' + escapeHtml(repo.name) + '</strong><div class="mono">' + escapeHtml(repo.slug) + ' · ' + escapeHtml(repo.default_branch) + '</div></div>').join("") || '<p>No projects found.</p>';
+        $("projectSelect").innerHTML = repos.map((repo) => '<option value="' + escapeHtml(repo.slug) + '">' + escapeHtml(repo.name) + '</option>').join("");
+        $("activityRail").innerHTML = '<div class="comment green"><div class="meta">Repos</div><div class="body-text">' + repos.length + ' available project' + (repos.length === 1 ? '' : 's') + ' loaded for this session.</div></div>';
+        if (repos[0]) setSelectedRepo(repos[0].slug, repos[0].name, repos[0].default_branch);
+        document.querySelectorAll("[data-repo]").forEach((el) => el.addEventListener("click", () => {
+          selectAndLoadArtifacts(el.dataset.repo);
+        }));
+      } catch (error) {
+        $("projectList").innerHTML = '<p>' + escapeHtml(error.message) + '</p>';
+        $("activityRail").innerHTML = '<div class="comment gray"><div class="meta">Repos</div><div class="body-text">' + escapeHtml(error.message) + '</div></div>';
+      }
+    }
+    function selectAndLoadArtifacts(slug) {
+      const repo = state.repos.find((item) => item.slug === slug);
+      if (repo) {
+        $("projectSelect").value = repo.slug;
+        setSelectedRepo(repo.slug, repo.name, repo.default_branch);
+      }
+      loadPrds(slug);
     }
     async function loadPrds(repo) {
-      if (!repo) return;
-      const data = await api("/api/prds?repo=" + encodeURIComponent(repo));
-      const prds = data.prds || [];
-      $("prdList").innerHTML = prds.map((prd) => '<div class="item"><strong>' + escapeHtml(prd.title) + '</strong><div class="mono">' + escapeHtml(prd.slug) + ' · ' + escapeHtml(prd.status) + ' · ' + escapeHtml(prd.branch_name) + '</div></div>').join("") || '<p>No artifacts found.</p>';
-      $("activityRail").innerHTML = '<div class="comment yellow"><div class="meta">Artifacts</div><div class="body-text">' + prds.length + ' artifact' + (prds.length === 1 ? '' : 's') + ' loaded for ' + escapeHtml(repo) + '.</div></div>';
+      if (!repo) {
+        $("artifactViewList").innerHTML = '<p>Choose a repo first.</p>';
+        $("prdList").innerHTML = '<p>Choose a repo first.</p>';
+        return;
+      }
+      try {
+        const data = await api("/api/prds?repo=" + encodeURIComponent(repo));
+        const prds = data.prds || [];
+        const html = prds.map((prd) => '<div class="item"><strong>' + escapeHtml(prd.title) + '</strong><div class="mono">' + escapeHtml(prd.slug) + ' · ' + escapeHtml(prd.status) + ' · ' + escapeHtml(prd.branch_name) + '</div></div>').join("") || '<p>No artifacts found.</p>';
+        $("prdList").innerHTML = html;
+        $("artifactViewList").innerHTML = html;
+        $("activityRail").innerHTML = '<div class="comment yellow"><div class="meta">Artifacts</div><div class="body-text">' + prds.length + ' artifact' + (prds.length === 1 ? '' : 's') + ' loaded for ' + escapeHtml(repo) + '.</div></div>';
+      } catch (error) {
+        const html = '<p>' + escapeHtml(error.message) + '</p>';
+        $("prdList").innerHTML = html;
+        $("artifactViewList").innerHTML = html;
+      }
+    }
+    async function loadCheckpoints(repo) {
+      if (!repo) {
+        $("checkpointList").innerHTML = '<p>Choose a repo first.</p>';
+        return;
+      }
+      try {
+        const data = await api("/api/checkpoints?repo=" + encodeURIComponent(repo));
+        const checkpoints = data.checkpoints || [];
+        $("checkpointList").innerHTML = checkpoints.map((checkpoint) => '<div class="item"><strong>' + escapeHtml(checkpoint.title || checkpoint.branch) + '</strong><div class="mono">' + escapeHtml(checkpoint.status) + ' · ' + escapeHtml(checkpoint.branch) + ' · ' + escapeHtml(checkpoint.commit_sha || "pending") + '</div></div>').join("") || '<p>No checkpoints found.</p>';
+        $("activityRail").innerHTML = '<div class="comment green"><div class="meta">Checkpoints</div><div class="body-text">' + checkpoints.length + ' checkpoint' + (checkpoints.length === 1 ? '' : 's') + ' loaded for ' + escapeHtml(repo) + '.</div></div>';
+      } catch (error) {
+        $("checkpointList").innerHTML = '<p>' + escapeHtml(error.message) + '</p>';
+      }
     }
     async function loadQuickstart() {
       const data = await api("/api/quickstart");
@@ -1250,7 +1304,10 @@ function desktopHtml() {
     function setSelectedRepo(slug, name, branch) {
       $("contextRepo").textContent = name || slug || "CoolStory Desktop";
       $("contextBranch").textContent = branch || "repo selected";
+      state.selectedRepo = slug ? { slug, name, default_branch: branch } : null;
       $("homePath").textContent = slug ? "repos/" + slug : "desktop/session";
+      $("artifactsPath").textContent = slug ? "repos/" + slug + "/artifacts" : "artifacts";
+      $("checkpointsPath").textContent = slug ? "repos/" + slug + "/checkpoints" : "checkpoints";
       $("workspaceStatus").textContent = slug ? "+ repo selected" : "+ authenticated workspace ready";
       $("workspaceDetail").textContent = slug ? "Loaded " + (name || slug) + " into this desktop session." : "No repo is selected yet.";
       $("workspaceAction").textContent = "✦ Load artifacts, checkpoints, or branch context from the repo view.";
