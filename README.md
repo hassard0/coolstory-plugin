@@ -102,6 +102,7 @@ coolstory whoami
 coolstory repos list
 coolstory artifacts list <repo-slug>
 coolstory artifacts get <repo-slug> <artifact-slug>
+coolstory artifacts push <repo-slug> docs/my-bmad-artifact.md --kind prd --branch feature/my-work
 coolstory checkpoint "Implemented artifact slice" --repo <repo-slug> --file <path>
 ```
 
@@ -123,6 +124,12 @@ Queue a checkpoint for the current branch:
 
 ```bash
 coolstory checkpoint "Agent implementation checkpoint" --repo my-project --branch feature/agent-work --file src/app.ts
+```
+
+Push a BMAD-created Markdown file back as a CoolStory artifact:
+
+```bash
+coolstory artifacts push my-project docs/payment-prd.md --kind prd --branch feature/payments
 ```
 
 Fetch an artifact as JSON for custom tooling:
@@ -149,13 +156,19 @@ Recommended agent loop:
 
 3. Implement in a normal Git branch.
 
-4. Queue a checkpoint back to CoolStory:
+4. If the agent creates or rewrites a Markdown artifact locally, push it back to CoolStory:
+
+   ```bash
+   coolstory artifacts push <repo-slug> <artifact-file.md> --kind prd --branch <branch>
+   ```
+
+5. Queue a checkpoint back to CoolStory:
 
    ```bash
    coolstory checkpoint "BMAD dev agent checkpoint" --repo <repo-slug> --branch <branch> --file <changed-file>
    ```
 
-5. Review the branch, comments, checkpoint history, and pull request in CoolStory.
+6. Review the branch, comments, checkpoint history, and pull request in CoolStory.
 
 Detailed guide: [docs/bmad.md](docs/bmad.md)
 

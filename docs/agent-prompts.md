@@ -29,6 +29,7 @@ Suggested command sequence:
 coolstory artifacts get <repo-slug> <artifact-slug>
 git checkout -b feature/<short-name>
 # agent edits files
+coolstory artifacts push <repo-slug> <artifact-file.md> --kind prd --branch feature/<short-name>
 coolstory checkpoint "Implemented <slice>" --repo <repo-slug> --branch feature/<short-name> --file <path>
 ```
 

@@ -17,7 +17,7 @@ The API URL resolves in this order:
 
 ## Local Storage
 
-`coolstory-desktop auth login` writes:
+`coolstory auth login` writes:
 
 ```text
 ~/.coolstory/plugin.json
@@ -32,4 +32,3 @@ For CI, containers, and short-lived agents, prefer environment variables instead
 The plugin does not clone or require the private CoolStory product repository.
 
 All access is scoped by the token and enforced by CoolStory server-side authorization.
-

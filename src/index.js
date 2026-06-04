@@ -7,7 +7,7 @@ import { basename, dirname, join } from "node:path";
 import { spawn } from "node:child_process";
 import { Writable } from "node:stream";
 
-const VERSION = "0.1.7";
+const VERSION = "0.1.8";
 const DEFAULT_API_URL = "https://coolstory.dev";
 const CONFIG_PATH = join(homedir(), ".coolstory", "plugin.json");
 
@@ -51,6 +51,7 @@ Usage:
   coolstory repos archive <repo> [output.tar] [--ref main]
   coolstory artifacts list <repo>
   coolstory artifacts get <repo> <artifact> [--json]
+  coolstory artifacts push <repo> <file.md> [--title "..."] [--kind prd] [--branch main] [--slug slug]
   coolstory prds list <repo>                         # legacy alias
   coolstory prds get <repo> <prd> [--json]            # legacy alias
   coolstory checkpoints list <repo>
@@ -85,7 +86,7 @@ async function auth(args) {
 
 async function status() {
   const config = await loadConfig();
-  console.log("CoolStory desktop");
+  console.log("CoolStory CLI");
   console.log(`API: ${config.apiUrl}`);
   console.log(`Token: ${config.token ? "configured" : "missing"}`);
   try {
@@ -161,7 +162,32 @@ async function prds(args) {
     console.log(response.prd?.content ?? "");
     return;
   }
-  throw new Error("Usage: coolstory artifacts <list|get>");
+  if (subcommand === "push") {
+    requireValue(repo, "repo");
+    requireValue(prd, "file");
+    const options = parseOptions(rest);
+    const content = await readFile(prd, "utf8");
+    const title = options.title || inferMarkdownTitle(content, prd);
+    const slug = options.slug || slugify(title);
+    const kind = options.kind || inferArtifactKind(prd);
+    const body = {
+      title,
+      slug,
+      kind,
+      branch_name: options.branch || process.env.COOLSTORY_BRANCH || "main",
+      status: options.status || "draft",
+      content,
+    };
+    const response = await apiRequest(config, `/api/public/cli/repos/${encodeURIComponent(repo)}/prds`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+    const action = response.created ? "Created" : "Updated";
+    console.log(`${action} artifact ${response.artifact?.slug} (${response.artifact?.kind}) on ${response.artifact?.branch_name}`);
+    if (response.commit_sha) console.log(`Commit ${response.commit_sha}`);
+    return;
+  }
+  throw new Error("Usage: coolstory artifacts <list|get|push>");
 }
 
 async function checkpoints(args) {
@@ -380,7 +406,7 @@ export async function startDesktopServer() {
 async function requireAuth() {
   const config = await loadConfig();
   if (!config.token) {
-    throw new Error("Missing token. Run `coolstory-desktop auth login --token <token>` or set COOLSTORY_TOKEN.");
+    throw new Error("Missing token. Run `coolstory auth login --token <token>` or set COOLSTORY_TOKEN.");
   }
   return config;
 }
@@ -468,6 +494,37 @@ function requireValue(value, name) {
   if (!value) {
     throw new Error(`${name} is required`);
   }
+}
+
+function inferMarkdownTitle(content, filePath) {
+  const heading = content.match(/^#\s+(.+?)\s*$/m)?.[1]?.trim();
+  if (heading) return heading.replace(/^PRD:\s*/i, "").trim();
+  return basename(filePath).replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ").trim() || "Untitled artifact";
+}
+
+function inferArtifactKind(filePath) {
+  const name = basename(filePath).toLowerCase();
+  if (name.includes("architecture")) return "architecture";
+  if (name.includes("frontend") || name.includes("front-end")) return "frontend_spec";
+  if (name.includes("brief")) return "project_brief";
+  if (name.includes("design")) return "design_doc";
+  if (name.includes("rfc")) return "rfc";
+  if (name.includes("rfd") || name.includes("decision")) return "rfd";
+  if (name.includes("epic")) return "epic";
+  if (name.includes("story")) return "story";
+  if (name.includes("qa")) return "qa_gate";
+  if (name.includes("retro")) return "retrospective";
+  if (name.includes("note")) return "note";
+  return "prd";
+}
+
+function slugify(value) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60) || "untitled";
 }
 
 function sendJson(res, body, status = 200) {

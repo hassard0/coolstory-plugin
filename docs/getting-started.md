@@ -37,8 +37,8 @@ In CoolStory:
 Then connect locally:
 
 ```bash
-coolstory-desktop auth login --token cs_pat_xxxxxxxxxxxxxxxx
-coolstory-desktop whoami
+coolstory auth login --token cs_pat_xxxxxxxxxxxxxxxx
+coolstory whoami
 ```
 
 ## 3. Find Your Work
@@ -49,7 +49,15 @@ coolstory artifacts list <repo-slug>
 coolstory artifacts get <repo-slug> <artifact-slug>
 ```
 
-## 4. Work In Git
+## 4. Push New BMAD Artifacts
+
+If your agent creates a local Markdown artifact, push it into CoolStory before checkpointing:
+
+```bash
+coolstory artifacts push <repo-slug> docs/my-artifact.md --kind prd --branch feature/<short-name>
+```
+
+## 5. Work In Git
 
 Use a normal branch:
 
@@ -57,7 +65,7 @@ Use a normal branch:
 git checkout -b feature/<short-name>
 ```
 
-## 5. Send A Checkpoint Back
+## 6. Send A Checkpoint Back
 
 ```bash
 coolstory checkpoint "Implemented first slice" \

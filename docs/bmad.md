@@ -20,13 +20,13 @@ npm install -g github:hassard0/coolstory-plugin
 Authenticate with a CoolStory personal access token:
 
 ```bash
-coolstory-desktop auth login --token cs_pat_xxxxxxxxxxxxxxxx
+coolstory auth login --token cs_pat_xxxxxxxxxxxxxxxx
 ```
 
 Confirm the agent can see the current user and repos:
 
 ```bash
-coolstory-desktop whoami
+coolstory whoami
 coolstory repos list
 ```
 
@@ -66,7 +66,15 @@ Use normal Git workflow:
 git checkout -b feature/<short-name>
 ```
 
-### 4. Queue a checkpoint
+### 4. Push artifact changes
+
+If the BMAD agent creates or substantially rewrites a Markdown artifact locally, push it back so it appears in CoolStory:
+
+```bash
+coolstory artifacts push <repo-slug> docs/payment-prd.md --kind prd --branch feature/<short-name>
+```
+
+### 5. Queue a checkpoint
 
 When the BMAD agent finishes a coherent slice:
 
@@ -81,7 +89,7 @@ coolstory checkpoint "Implemented <feature>" \
 
 CoolStory will show this checkpoint in project history and review surfaces.
 
-### 5. Review in CoolStory
+### 6. Review in CoolStory
 
 Open CoolStory:
 

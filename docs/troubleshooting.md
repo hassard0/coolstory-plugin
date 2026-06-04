@@ -5,7 +5,7 @@
 Run:
 
 ```bash
-coolstory-desktop auth login --token cs_pat_xxxxxxxxxxxxxxxx
+coolstory auth login --token cs_pat_xxxxxxxxxxxxxxxx
 ```
 
 Or set:
@@ -21,7 +21,7 @@ The token is missing, expired, or does not have access to the requested company/
 Create a new token in CoolStory and confirm:
 
 ```bash
-coolstory-desktop whoami
+coolstory whoami
 ```
 
 ## `404 Not Found`
