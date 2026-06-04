@@ -676,7 +676,12 @@ function desktopHtmlLegacy() {
     $("connectBtn2").addEventListener("click", startAuth);
     $("logoutBtn").addEventListener("click", logout);
     $("loadProjects").addEventListener("click", loadProjects);
-    $("loadPrds").addEventListener("click", () => loadPrds($("projectSelect").value));
+    $("loadPrds").addEventListener("click", () => {
+      const slug = $("projectSelect").value;
+      const repo = state.repos?.find((item) => item.slug === slug);
+      if (repo) setSelectedRepo(repo.slug, repo.name, repo.default_branch);
+      loadPrds(slug);
+    });
 
     function show(view) {
       document.querySelectorAll("main section").forEach((section) => section.classList.toggle("hide", section.id !== view));
@@ -728,6 +733,7 @@ function desktopHtmlLegacy() {
     async function loadProjects() {
       const data = await api("/api/repos");
       const repos = data.repos || [];
+      state.repos = repos;
       $("projectList").innerHTML = repos.map((repo) => '<div class="item" data-repo="' + escapeHtml(repo.slug) + '"><strong>' + escapeHtml(repo.name) + '</strong><div class="mono">' + escapeHtml(repo.slug) + ' · ' + escapeHtml(repo.default_branch) + '</div></div>').join("") || '<p>No projects found.</p>';
       $("projectSelect").innerHTML = repos.map((repo) => '<option value="' + escapeHtml(repo.slug) + '">' + escapeHtml(repo.name) + '</option>').join("");
       document.querySelectorAll("[data-repo]").forEach((el) => el.addEventListener("click", () => { $("projectSelect").value = el.dataset.repo; loadPrds(el.dataset.repo); }));
@@ -999,11 +1005,9 @@ function desktopHtml() {
           <span class="dot amber"></span>
           <span class="dot green"></span>
         </div>
-        <div class="repo-title"><span class="branch-icon">⌘</span> coolstory/web · <strong>feature/onboarding-v2</strong></div>
+        <div class="repo-title"><span class="branch-icon">⌘</span> <span id="contextRepo">CoolStory Desktop</span> · <strong id="contextBranch">connect a session</strong></div>
         <div class="avatars" aria-label="Active collaborators">
-          <span class="avatar cyan">JY</span>
-          <span class="avatar yellow">AL</span>
-          <span class="avatar green">RK</span>
+          <span class="avatar cyan" id="profileAvatar">CS</span>
         </div>
       </header>
       <div class="body">
@@ -1027,17 +1031,17 @@ function desktopHtml() {
         <main>
           <div class="workspace">
             <section id="home">
-              <p class="doc-path">prd/onboarding-v2.md</p>
-              <h1>Onboarding v2</h1>
-              <p class="lede">We reduce time-to-first-checkpoint from <span class="inline-chip gold">14 minutes</span> to under <span class="inline-chip green">90 seconds</span> by collapsing repo setup, role detection, and BMAD context priming into a single guided session...</p>
+              <p class="doc-path" id="homePath">desktop/session</p>
+              <h1 id="homeTitle">Connect CoolStory</h1>
+              <p class="lede" id="homeLead">Authenticate this desktop app, choose a company project, and load the artifacts your account is allowed to access.</p>
               <div class="checkpoint">
-                <div><strong>+ checkpoint to feature/onboarding-v2</strong></div>
-                <div>3 files · 142 ops merged from 3 collaborators</div>
-                <div class="ai">✦ AI: ready to propose PR - no conflicts detected</div>
+                <div><strong id="workspaceStatus">+ waiting for authenticated workspace</strong></div>
+                <div id="workspaceDetail">No project is loaded in this desktop session yet.</div>
+                <div class="ai" id="workspaceAction">✦ Connect, then load repos to start agent work.</div>
               </div>
               <div class="actions hero-actions">
-                <button class="primary" data-jump="projects">Checkpoint to branch</button>
-                <button class="secondary" data-jump="quickstart">Suggest mode</button>
+                <button class="primary" data-jump="projects">Open repos</button>
+                <button class="secondary" data-jump="quickstart">Quickstart</button>
               </div>
               <div class="panel-grid">
                 <div class="card">
@@ -1062,7 +1066,7 @@ function desktopHtml() {
               </div>
             </section>
             <section id="projects" class="hide">
-              <p class="doc-path">repos/company-scope</p>
+              <p class="doc-path" id="reposPath">repos</p>
               <h1>Repos</h1>
               <p class="lede">Load only the projects your Auth0 organization and CoolStory permissions allow this desktop client to see.</p>
               <div class="row" style="margin-bottom:14px">
@@ -1134,17 +1138,11 @@ function desktopHtml() {
             <span class="pill" id="railState">Local app</span>
             <button class="secondary" data-jump="settings">Auth</button>
           </div>
-          <div class="comment yellow">
-            <div class="meta">Amelia · Design</div>
-            <div class="body-text">Hooked the empty state to the BMAD persona - should we A/B the 90s claim?</div>
-          </div>
-          <div class="comment green">
-            <div class="meta">Ravi · Eng</div>
-            <div class="body-text">Branch protections pass. CI green on 3/3 checks.</div>
-          </div>
-          <div class="comment gray">
-            <div class="meta">Jules · PM</div>
-            <div class="body-text">Linked to LIN-482. Decision logged.</div>
+          <div id="activityRail">
+            <div class="comment gray">
+              <div class="meta">Activity</div>
+              <div class="body-text">Connect and load a repo to see project context here.</div>
+            </div>
           </div>
         </aside>
       </div>
@@ -1180,6 +1178,14 @@ function desktopHtml() {
       $("sessionState").className = "pill " + (state.status.authenticated ? "ok" : "warn");
       $("profileText").textContent = state.status.authenticated ? (state.status.profile?.display_name || "CoolStory user") : "Connect through your CoolStory web session.";
       $("railState").textContent = state.status.authenticated ? "Synced" : "Local app";
+      $("contextBranch").textContent = state.status.authenticated ? "session connected" : "connect a session";
+      $("homeTitle").textContent = state.status.authenticated ? "Workspace Ready" : "Connect CoolStory";
+      $("homeLead").textContent = state.status.authenticated ? "Choose a repo to load project artifacts, branch context, checkpoints, and agent handoff data." : "Authenticate this desktop app, choose a company project, and load the artifacts your account is allowed to access.";
+      $("workspaceStatus").textContent = state.status.authenticated ? "+ authenticated workspace ready" : "+ waiting for authenticated workspace";
+      $("workspaceDetail").textContent = state.status.authenticated ? "No repo is selected yet." : "No project is loaded in this desktop session yet.";
+      $("workspaceAction").textContent = state.status.authenticated ? "✦ Load repos to start agent work." : "✦ Connect, then load repos to start agent work.";
+      const name = state.status.profile?.display_name || state.status.profile?.email || "CS";
+      $("profileAvatar").textContent = initials(name);
     }
     async function startAuth() {
       $("authPanel").classList.remove("hide");
@@ -1214,13 +1220,21 @@ function desktopHtml() {
       const repos = data.repos || [];
       $("projectList").innerHTML = repos.map((repo) => '<div class="item" data-repo="' + escapeHtml(repo.slug) + '"><strong>' + escapeHtml(repo.name) + '</strong><div class="mono">' + escapeHtml(repo.slug) + ' · ' + escapeHtml(repo.default_branch) + '</div></div>').join("") || '<p>No projects found.</p>';
       $("projectSelect").innerHTML = repos.map((repo) => '<option value="' + escapeHtml(repo.slug) + '">' + escapeHtml(repo.name) + '</option>').join("");
-      document.querySelectorAll("[data-repo]").forEach((el) => el.addEventListener("click", () => { $("projectSelect").value = el.dataset.repo; loadPrds(el.dataset.repo); }));
+      $("activityRail").innerHTML = '<div class="comment green"><div class="meta">Repos</div><div class="body-text">' + repos.length + ' available project' + (repos.length === 1 ? '' : 's') + ' loaded for this session.</div></div>';
+      if (repos[0]) setSelectedRepo(repos[0].slug, repos[0].name, repos[0].default_branch);
+      document.querySelectorAll("[data-repo]").forEach((el) => el.addEventListener("click", () => {
+        const repo = state.repos.find((item) => item.slug === el.dataset.repo);
+        $("projectSelect").value = el.dataset.repo;
+        setSelectedRepo(el.dataset.repo, repo?.name || el.dataset.repo, repo?.default_branch || "");
+        loadPrds(el.dataset.repo);
+      }));
     }
     async function loadPrds(repo) {
       if (!repo) return;
       const data = await api("/api/prds?repo=" + encodeURIComponent(repo));
       const prds = data.prds || [];
       $("prdList").innerHTML = prds.map((prd) => '<div class="item"><strong>' + escapeHtml(prd.title) + '</strong><div class="mono">' + escapeHtml(prd.slug) + ' · ' + escapeHtml(prd.status) + ' · ' + escapeHtml(prd.branch_name) + '</div></div>').join("") || '<p>No artifacts found.</p>';
+      $("activityRail").innerHTML = '<div class="comment yellow"><div class="meta">Artifacts</div><div class="body-text">' + prds.length + ' artifact' + (prds.length === 1 ? '' : 's') + ' loaded for ' + escapeHtml(repo) + '.</div></div>';
     }
     async function loadQuickstart() {
       const data = await api("/api/quickstart");
@@ -1228,6 +1242,18 @@ function desktopHtml() {
     }
     function escapeHtml(value) {
       return String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
+    }
+    function initials(value) {
+      const parts = String(value || "CS").trim().split(/\\s+|@/).filter(Boolean);
+      return parts.slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "CS";
+    }
+    function setSelectedRepo(slug, name, branch) {
+      $("contextRepo").textContent = name || slug || "CoolStory Desktop";
+      $("contextBranch").textContent = branch || "repo selected";
+      $("homePath").textContent = slug ? "repos/" + slug : "desktop/session";
+      $("workspaceStatus").textContent = slug ? "+ repo selected" : "+ authenticated workspace ready";
+      $("workspaceDetail").textContent = slug ? "Loaded " + (name || slug) + " into this desktop session." : "No repo is selected yet.";
+      $("workspaceAction").textContent = "✦ Load artifacts, checkpoints, or branch context from the repo view.";
     }
     refreshStatus().catch((error) => { $("sidebarStatus").textContent = error.message; });
   </script>
