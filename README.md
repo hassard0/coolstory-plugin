@@ -1,14 +1,15 @@
 # CoolStory Plugin
 
-Public CoolStory agent and CLI integration package.
+Public CoolStory desktop client, agent integration, and CLI package.
 
 This repository is intentionally separate from the private CoolStory product repository. Users, agents, customer environments, and BMAD workspaces should install this plugin instead of cloning the private app source.
 
 ## What This Does
 
-`coolstory-plugin` lets agents and local developer workflows:
+`coolstory-plugin` lets desktop users, agents, and local developer workflows:
 
-- authenticate to CoolStory with a personal access token
+- authenticate to CoolStory through a browser-approved web session
+- launch a local desktop-style GUI for project and artifact context
 - list accessible projects and repositories
 - read PRDs into an agent context
 - inspect Git refs and download authenticated snapshots
@@ -31,6 +32,14 @@ coolstory-plugin --help
 
 The package also exposes a `coolstory` alias, but docs use `coolstory-plugin` so it is clear this is the public integration package.
 
+Launch the desktop GUI:
+
+```bash
+coolstory-plugin
+```
+
+The client opens a local GUI in your browser. Click **Connect with browser** to approve the device-code request inside your authenticated CoolStory web session. After approval, the client stores the generated CoolStory token locally.
+
 ## Standalone Binaries
 
 Release builds publish standalone binaries for:
@@ -51,6 +60,16 @@ The generated executable is written to `dist/`.
 Windows and macOS binaries are built by GitHub Actions on native runners using Node SEA. Source installs still require Node.js 20 or newer. Run the `Release Binaries` workflow or push a `v*` tag.
 
 ## Connect
+
+Recommended desktop flow:
+
+```bash
+coolstory-plugin
+```
+
+The app opens a local GUI and starts a secure browser approval flow at `https://coolstory.dev/app/connect`.
+
+Agent and CI fallback:
 
 Create a personal access token in CoolStory, then store it locally:
 

@@ -16,6 +16,16 @@ coolstory-plugin --help
 
 ## 2. Create A Token
 
+For desktop use, launch the GUI and approve the browser connection:
+
+```bash
+coolstory-plugin
+```
+
+The app opens a local CoolStory client in your browser. Choose **Connect with browser**, approve the matching code in the CoolStory web session, then return to the client.
+
+For headless agent or CI use, create a token manually.
+
 In CoolStory:
 
 1. Open `https://coolstory.dev/app/settings`.
@@ -60,4 +70,3 @@ Open CoolStory to review history, comments, and PRs:
 ```text
 https://coolstory.dev/app
 ```
-

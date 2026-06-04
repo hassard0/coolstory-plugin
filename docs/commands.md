@@ -1,5 +1,14 @@
 # Command Reference
 
+## Desktop GUI
+
+```bash
+coolstory-plugin
+coolstory-plugin gui
+```
+
+Launches a local desktop-style GUI and opens it in the default browser. Authentication uses CoolStory's device-code flow: the client starts a connection request, the user approves it in the authenticated CoolStory web app, and the client stores the generated token locally.
+
 ## Auth
 
 ```bash
