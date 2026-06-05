@@ -58,6 +58,12 @@ If your agent creates a local Markdown artifact, push it into CoolStory before c
 coolstory bmad sync <repo-slug> docs/my-artifact.md --kind prd --branch feature/<short-name>
 ```
 
+If a checkpoint is queued and needs to become a branch commit or import attached Markdown artifact payloads, materialize it:
+
+```bash
+coolstory checkpoints materialize <repo-slug> <checkpoint-id>
+```
+
 ## 5. Work In Git
 
 Use a normal branch:
@@ -75,6 +81,8 @@ coolstory bmad handoff <repo-slug> \
   --summary "Implemented the initial behavior and added tests." \
   --file src/example.ts
 ```
+
+MCP-capable agents can call `coolstory_materialize_checkpoint` instead of shelling out to the CLI.
 
 Open CoolStory to review history, comments, and PRs:
 

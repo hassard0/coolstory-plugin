@@ -21,6 +21,7 @@ Before finishing:
 - summarize implementation and tradeoffs
 - list test results
 - sync any Markdown artifact edits with `coolstory bmad sync`
+- materialize queued checkpoints with `coolstory checkpoints materialize` or MCP `coolstory_materialize_checkpoint` when the work should appear in CoolStory immediately
 - queue a CoolStory handoff with changed files
 ```
 
@@ -33,6 +34,7 @@ coolstory bmad start <repo-slug> <artifact-slug> --branch feature/<short-name> -
 git checkout -b feature/<short-name>
 # agent edits files
 coolstory bmad sync <repo-slug> <artifact-file.md> --kind prd --branch feature/<short-name>
+coolstory checkpoints materialize <repo-slug> <checkpoint-id>
 coolstory bmad handoff <repo-slug> --branch feature/<short-name> --title "Implemented <slice>" --file <path>
 ```
 

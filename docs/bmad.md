@@ -36,7 +36,7 @@ For MCP-capable agents, run the PAT-backed server instead of shelling out for ev
 coolstory-mcp
 ```
 
-The MCP server exposes repo, artifact read/write/search, context, checkpoint, and proposed-change tools using the same PAT and authorization model.
+The MCP server exposes repo, artifact read/write/search, context, checkpoint creation/materialization, and proposed-change tools using the same PAT and authorization model.
 
 ## Recommended BMAD Agent Loop
 
@@ -90,6 +90,14 @@ coolstory bmad sync <repo-slug> docs/payment-prd.md --kind prd --branch feature/
 ```
 
 `bmad sync` creates or updates the artifact, writes the Markdown content into the checkpoint payload, and avoids asking humans to invent IDs. Use `coolstory artifacts kinds` when an agent needs to choose a kind for a new artifact.
+
+If the checkpoint remains queued and should become durable immediately, materialize it:
+
+```bash
+coolstory checkpoints materialize <repo-slug> <checkpoint-id>
+```
+
+MCP-capable agents can call `coolstory_materialize_checkpoint` with the repo slug and checkpoint id.
 
 ### 5. Hand off a coherent slice
 
@@ -152,6 +160,7 @@ Before an agent marks work complete:
 - Artifact requirement was read from CoolStory.
 - Work happened on a named Git branch.
 - Local Markdown artifacts were synced with `coolstory bmad sync`.
+- Queued checkpoints that should become durable were materialized with `coolstory checkpoints materialize` or `coolstory_materialize_checkpoint`.
 - Changed source files are listed in the handoff checkpoint.
 - Summary explains the implementation and tradeoffs.
 - Follow-up risks or missing tests are noted.
