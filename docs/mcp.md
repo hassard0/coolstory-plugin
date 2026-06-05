@@ -1,23 +1,26 @@
 # MCP Server
 
-CoolStory exposes a hosted PAT-backed MCP endpoint at `https://coolstory.dev/api/mcp` and also includes `coolstory-mcp`, a local stdio MCP server for clients that cannot use hosted MCP.
+CoolStory exposes a hosted Auth0-protected MCP endpoint at `https://coolstory.dev/api/mcp` and also includes `coolstory-mcp`, a local stdio MCP server for clients that cannot use hosted MCP.
 
 Use hosted MCP by default when the agent runtime can call remote tools. Use local stdio MCP when the client requires a local command. Use the `coolstory` CLI when the agent is shell-first or needs local file operations such as `bmad start`, `bmad sync`, `clone`, or `bmad handoff`.
 
 ## Hosted MCP
 
-Create a CoolStory PAT in the web app under Settings, then register the hosted MCP server in remote-capable clients:
+Register the hosted MCP server in remote-capable clients:
 
 ```text
 Server URL: https://coolstory.dev/api/mcp
-Transport: MCP Streamable HTTP
-Auth: Bearer token through the client's remote-MCP auth flow
+Transport: MCP Streamable HTTP, protocol 2025-11-25
+Auth: Auth0 OAuth/OIDC through the client's remote-MCP auth flow
 Protected resource metadata: https://coolstory.dev/.well-known/oauth-protected-resource
+Authorization server: https://coolstory.us.auth0.com
+Read scope: coolstory:mcp:read
+Write scope: coolstory:mcp:write
 ```
 
-Hosted MCP is the preferred path for managed agents because there is no local package install, no local token file, and every tool request is authorized by the CoolStory backend.
+Hosted MCP is the preferred path for managed agents because there is no local package install, no local token file, and every tool request is authorized through Auth0, Auth0 Organizations, CoolStory project membership, and OpenFGA.
 
-The MCP URL is not a browser documentation page. It is a Streamable HTTP MCP endpoint: clients call it with JSON-RPC over POST, `Accept: application/json, text/event-stream`, and a bearer token when invoking protected tools.
+The MCP URL is not a browser documentation page. It is a Streamable HTTP MCP endpoint: clients call it with JSON-RPC over POST, `Accept: application/json, text/event-stream`, and an Auth0 bearer token when invoking protected tools.
 
 ```bash
 curl https://coolstory.dev/.well-known/oauth-protected-resource
@@ -38,7 +41,7 @@ coolstory --help
 coolstory-mcp --help
 ```
 
-Then either save the PAT locally:
+Then either save a legacy PAT locally:
 
 ```bash
 coolstory auth login --token cs_pat_xxxxxxxxxxxxxxxx
@@ -75,8 +78,8 @@ If the local agent process already has `COOLSTORY_API_URL` and `COOLSTORY_TOKEN`
 
 Core tools:
 
-- `coolstory_whoami`: confirm the PAT owner.
-- `coolstory_list_repos`: list projects visible to the PAT owner.
+- `coolstory_whoami`: confirm the authenticated CoolStory user.
+- `coolstory_list_repos`: list projects visible to the authenticated user.
 - `coolstory_list_artifacts`: list artifacts in a project.
 - `coolstory_get_artifact`: fetch artifact Markdown and metadata.
 - `coolstory_create_artifact`: create an artifact from agent output.
@@ -107,6 +110,6 @@ coolstory bmad handoff <repo-slug> --branch feature/<short-name> --title "Implem
 
 ## Security
 
-The MCP server only sees data allowed by the PAT owner. CoolStory still enforces company membership, project membership, PAT validity, and OpenFGA relationship checks on every request.
+Hosted MCP uses Auth0 access tokens. Read tools require `coolstory:mcp:read`; write, checkpoint, materialization, and pull-request tools require `coolstory:mcp:write`. CoolStory still enforces Auth0 Organization membership, project membership, token validity, and OpenFGA relationship checks on every request.
 
-Do not put PATs in source control, prompt transcripts, or shared config files. Prefer environment injection from the agent runtime or secret manager.
+Local stdio MCP can use PATs for clients that cannot perform hosted OAuth. Do not put PATs in source control, prompt transcripts, or shared config files. Prefer hosted MCP or environment injection from the agent runtime or secret manager.

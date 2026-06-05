@@ -35,7 +35,7 @@ The package exposes:
 - `coolstory`: canonical headless CLI for BMAD agents and automation.
 - `coolstory-desktop`: desktop GUI launcher and CLI-compatible alias.
 - `coolstory-plugin`: compatibility alias.
-- `coolstory-mcp`: local PAT-backed MCP stdio server for clients that cannot use hosted MCP.
+- `coolstory-mcp`: local PAT-backed MCP stdio server for clients that cannot use hosted Auth0 MCP.
 
 Launch the desktop GUI:
 
@@ -173,13 +173,15 @@ coolstory artifacts kinds
 
 ## MCP Server
 
-CoolStory hosts a PAT-backed MCP Streamable HTTP endpoint at `https://coolstory.dev/api/mcp`. Use hosted MCP by default for managed agents:
+CoolStory hosts an Auth0-protected MCP Streamable HTTP endpoint at `https://coolstory.dev/api/mcp`. Use hosted MCP by default for managed agents:
 
 ```text
 Server URL: https://coolstory.dev/api/mcp
-Transport: MCP Streamable HTTP
-Auth: Bearer token through the client's remote-MCP auth flow
+Transport: MCP Streamable HTTP, protocol 2025-11-25
+Auth: Auth0 OAuth/OIDC through the client's remote-MCP auth flow
 Protected resource metadata: https://coolstory.dev/.well-known/oauth-protected-resource
+Authorization server: https://coolstory.us.auth0.com
+Scopes: coolstory:mcp:read and coolstory:mcp:write
 ```
 
 Use the dependency-free local stdio server only when the agent client requires a local command:
@@ -210,7 +212,7 @@ Available MCP tools include:
 - `coolstory_materialize_checkpoint`
 - `coolstory_propose_change`
 
-These tools only see repositories and artifacts allowed by the PAT.
+Hosted MCP tools only see repositories and artifacts allowed by the Auth0 user, Auth0 Organization, CoolStory project membership, and OpenFGA. Local stdio MCP can still use PATs for clients that cannot perform hosted OAuth.
 
 Local stdio agent config shape:
 

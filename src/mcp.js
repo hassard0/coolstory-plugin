@@ -215,7 +215,7 @@ async function drainMessages() {
 async function handle(message) {
   if (message.method === "initialize") {
     send(message.id, {
-      protocolVersion: "2024-11-05",
+      protocolVersion: "2025-11-25",
       capabilities: { tools: {} },
       serverInfo: { name: "coolstory-mcp", version: "0.1.21" },
     });

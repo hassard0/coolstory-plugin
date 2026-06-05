@@ -127,12 +127,13 @@ Prefer hosted MCP for managed agents:
 
 ```text
 Server URL: https://coolstory.dev/api/mcp
-Transport: MCP Streamable HTTP
-Auth: Bearer token through the client's remote-MCP auth flow
+Transport: MCP Streamable HTTP, protocol 2025-11-25
+Auth: Auth0 OAuth/OIDC through the client's remote-MCP auth flow
 Protected resource metadata: https://coolstory.dev/.well-known/oauth-protected-resource
+Scopes: coolstory:mcp:read and coolstory:mcp:write
 ```
 
-Use [MCP Server](mcp.md) for hosted transport details, local stdio fallback, PAT setup, tool behavior, and the recommended BMAD loop.
+Use [MCP Server](mcp.md) for hosted transport details, Auth0 scopes, local stdio fallback, PAT setup, tool behavior, and the recommended BMAD loop.
 
 Tools:
 

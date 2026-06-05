@@ -43,9 +43,10 @@ Use hosted MCP when the client can call remote tools directly instead of shell c
 
 ```text
 Server URL: https://coolstory.dev/api/mcp
-Transport: MCP Streamable HTTP
-Auth: Bearer token through the client's remote-MCP auth flow
+Transport: MCP Streamable HTTP, protocol 2025-11-25
+Auth: Auth0 OAuth/OIDC through the client's remote-MCP auth flow
 Protected resource metadata: https://coolstory.dev/.well-known/oauth-protected-resource
+Scopes: coolstory:mcp:read and coolstory:mcp:write
 ```
 
 Use local stdio MCP only when the client requires a local command:

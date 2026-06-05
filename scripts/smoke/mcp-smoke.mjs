@@ -21,11 +21,12 @@ child.stdout.on("data", (chunk) => {
 
 try {
   const initialize = await request("initialize", {
-    protocolVersion: "2024-11-05",
+    protocolVersion: "2025-11-25",
     capabilities: {},
     clientInfo: { name: "coolstory-mcp-smoke", version: "1.0.0" },
   });
   assert(initialize.serverInfo?.name === "coolstory-mcp", "initialize did not return coolstory-mcp server info");
+  assert(initialize.protocolVersion === "2025-11-25", "initialize returned the wrong MCP protocol version");
 
   notify("notifications/initialized", {});
 
