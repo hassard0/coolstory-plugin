@@ -74,3 +74,21 @@ curl "$COOLSTORY_API_URL/api/public/git/repos/<repo-slug>/info/refs?service=git-
 ```
 
 This is discovery-only today. BMAD and agents should still use `coolstory clone` for tenant-checked snapshots and CoolStory PR/checkpoint APIs for handoff. Full smart Git `upload-pack` and `receive-pack` negotiation are tracked as the next Git-server milestone.
+
+Git clients may also POST to the authenticated smart-service endpoints:
+
+```bash
+curl "$COOLSTORY_API_URL/api/public/git/repos/<repo-slug>/git-upload-pack" \
+  -X POST \
+  -H "Authorization: Bearer $COOLSTORY_TOKEN" \
+  -H "Content-Type: application/x-git-upload-pack-request" \
+  --data-binary '0000'
+
+curl "$COOLSTORY_API_URL/api/public/git/repos/<repo-slug>/git-receive-pack" \
+  -X POST \
+  -H "Authorization: Bearer $COOLSTORY_TOKEN" \
+  -H "Content-Type: application/x-git-receive-pack-request" \
+  --data-binary '0000'
+```
+
+These endpoints currently return authenticated, Git-shaped `501` service errors. They exist so Git tooling fails clearly while CoolStory finishes pack negotiation and audited push support.

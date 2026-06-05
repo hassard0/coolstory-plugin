@@ -112,7 +112,7 @@ async function handle(message) {
     send(message.id, {
       protocolVersion: "2024-11-05",
       capabilities: { tools: {} },
-      serverInfo: { name: "coolstory-mcp", version: "0.1.16" },
+      serverInfo: { name: "coolstory-mcp", version: "0.1.17" },
     });
     return;
   }

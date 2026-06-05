@@ -46,6 +46,12 @@ jobs:
       - name: Smoke
         run: npm run smoke
 
+      - name: MCP smoke
+        run: npm run smoke:mcp
+        env:
+          COOLSTORY_API_URL: https://coolstory.dev
+          COOLSTORY_TOKEN: ${{ secrets.COOLSTORY_MCP_SMOKE_TOKEN }}
+
       - name: Desktop smoke
         run: npm run smoke:desktop
 

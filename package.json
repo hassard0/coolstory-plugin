@@ -1,6 +1,6 @@
 {
   "name": "coolstory-plugin",
-  "version": "0.1.16",
+  "version": "0.1.17",
   "description": "Public CoolStory agent and CLI integration plugin.",
   "type": "module",
   "main": "electron-main.cjs",
@@ -23,6 +23,7 @@
   ],
   "scripts": {
     "smoke": "node src/index.js --help",
+    "smoke:mcp": "node scripts/smoke/mcp-smoke.mjs",
     "smoke:desktop": "node scripts/smoke/desktop-smoke.mjs",
     "smoke:desktop:packaged": "node scripts/smoke/packaged-desktop-smoke.mjs",
     "start:desktop": "electron .",
