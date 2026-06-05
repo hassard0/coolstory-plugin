@@ -30,6 +30,14 @@ coolstory whoami
 coolstory repos list
 ```
 
+For MCP-capable agents, run the PAT-backed server instead of shelling out for every command:
+
+```bash
+coolstory-mcp
+```
+
+The MCP server exposes repo, artifact, context, and checkpoint tools using the same PAT and authorization model.
+
 ## Recommended BMAD Agent Loop
 
 ### 1. Start the session

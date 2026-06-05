@@ -63,3 +63,14 @@ curl "$COOLSTORY_API_URL/api/public/git/repos/<repo-slug>/archive?ref=main" \
   -H "Authorization: Bearer $COOLSTORY_TOKEN" \
   -o repo-main.tar
 ```
+
+## Git Discovery
+
+CoolStory exposes authenticated ref discovery for Git tooling:
+
+```bash
+curl "$COOLSTORY_API_URL/api/public/git/repos/<repo-slug>/info/refs?service=git-upload-pack" \
+  -H "Authorization: Bearer $COOLSTORY_TOKEN"
+```
+
+This is discovery-only today. BMAD and agents should still use `coolstory clone` for tenant-checked snapshots and CoolStory PR/checkpoint APIs for handoff. Full smart Git `upload-pack` and `receive-pack` negotiation are tracked as the next Git-server milestone.

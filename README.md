@@ -35,6 +35,7 @@ The package exposes:
 - `coolstory`: canonical headless CLI for BMAD agents and automation.
 - `coolstory-desktop`: desktop GUI launcher and CLI-compatible alias.
 - `coolstory-plugin`: compatibility alias.
+- `coolstory-mcp`: PAT-backed MCP stdio server for agent clients.
 
 Launch the desktop GUI:
 
@@ -162,6 +163,32 @@ List supported artifact kinds:
 ```bash
 coolstory artifacts kinds
 ```
+
+## MCP Server
+
+CoolStory ships a dependency-free MCP stdio server backed by the same PAT used by the CLI.
+
+```bash
+coolstory auth login --token cs_pat_xxxxxxxxxxxxxxxx
+coolstory-mcp
+```
+
+Or use environment variables in an agent runtime:
+
+```bash
+COOLSTORY_API_URL=https://coolstory.dev COOLSTORY_TOKEN=cs_pat_xxx coolstory-mcp
+```
+
+Available MCP tools include:
+
+- `coolstory_whoami`
+- `coolstory_list_repos`
+- `coolstory_list_artifacts`
+- `coolstory_get_artifact`
+- `coolstory_context`
+- `coolstory_create_checkpoint`
+
+These tools only see repositories and artifacts allowed by the PAT.
 
 ## BMAD Integration
 

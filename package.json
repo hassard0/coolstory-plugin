@@ -1,13 +1,14 @@
 {
   "name": "coolstory-plugin",
-  "version": "0.1.15",
+  "version": "0.1.16",
   "description": "Public CoolStory agent and CLI integration plugin.",
   "type": "module",
   "main": "electron-main.cjs",
   "bin": {
     "coolstory-desktop": "src/index.js",
     "coolstory-plugin": "src/index.js",
-    "coolstory": "src/index.js"
+    "coolstory": "src/index.js",
+    "coolstory-mcp": "src/mcp.js"
   },
   "engines": {
     "node": ">=20"

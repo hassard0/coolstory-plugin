@@ -111,6 +111,24 @@ coolstory skills
 
 `skills` prints `SKILLS.md`, the BMAD client contract packaged with the CLI.
 
+## MCP Server
+
+```bash
+coolstory-mcp
+coolstory mcp
+```
+
+Runs a stdio MCP server using `COOLSTORY_TOKEN` or the token saved by `coolstory auth login`.
+
+Tools:
+
+- `coolstory_whoami`
+- `coolstory_list_repos`
+- `coolstory_list_artifacts`
+- `coolstory_get_artifact`
+- `coolstory_context`
+- `coolstory_create_checkpoint`
+
 ## Checkpoints
 
 ```bash

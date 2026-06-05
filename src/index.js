@@ -8,7 +8,7 @@ import { spawn } from "node:child_process";
 import { Writable } from "node:stream";
 import { fileURLToPath } from "node:url";
 
-const VERSION = "0.1.15";
+const VERSION = "0.1.16";
 const DEFAULT_API_URL = "https://coolstory.dev";
 const CONFIG_PATH = join(homedir(), ".coolstory", "plugin.json");
 const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -35,6 +35,7 @@ const commands = {
   "skills": skills,
   "skill": skills,
   "quickstart": quickstart,
+  "mcp": mcp,
   "gui": gui,
 };
 
@@ -82,6 +83,7 @@ Usage:
   coolstory context <repo> [artifact-slug]
   coolstory skills
   coolstory quickstart
+  coolstory mcp
 
 Desktop GUI:
   coolstory-desktop gui
@@ -89,6 +91,14 @@ Desktop GUI:
 Environment:
   COOLSTORY_API_URL=https://coolstory.dev
   COOLSTORY_TOKEN=cs_pat_xxxxxxxxxxxxxxxx`);
+}
+
+async function mcp() {
+  const child = spawn(process.execPath, [join(PACKAGE_ROOT, "src", "mcp.js")], { stdio: "inherit" });
+  await new Promise((resolve, reject) => {
+    child.on("exit", (code) => code === 0 ? resolve() : reject(new Error(`coolstory-mcp exited ${code}`)));
+    child.on("error", reject);
+  });
 }
 
 function version() {
