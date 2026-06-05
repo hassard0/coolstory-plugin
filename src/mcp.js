@@ -139,6 +139,19 @@ const tools = [
     },
   },
   {
+    name: "coolstory_materialize_checkpoint",
+    description: "Materialize a queued checkpoint and import attached Markdown artifact payloads.",
+    inputSchema: {
+      type: "object",
+      required: ["repo", "checkpoint"],
+      properties: {
+        repo: { type: "string" },
+        checkpoint: { type: "string" },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
     name: "coolstory_propose_change",
     description: "Create a CoolStory pull request for an artifact branch change.",
     inputSchema: {
@@ -204,7 +217,7 @@ async function handle(message) {
     send(message.id, {
       protocolVersion: "2024-11-05",
       capabilities: { tools: {} },
-      serverInfo: { name: "coolstory-mcp", version: "0.1.20" },
+      serverInfo: { name: "coolstory-mcp", version: "0.1.21" },
     });
     return;
   }
@@ -302,6 +315,14 @@ async function callTool(name, args) {
         files: Array.isArray(args.files) ? args.files : [],
         artifacts: Array.isArray(args.artifacts) ? args.artifacts : [],
       }),
+    });
+  }
+  if (name === "coolstory_materialize_checkpoint") {
+    requireArg(args.repo, "repo");
+    requireArg(args.checkpoint, "checkpoint");
+    return apiRequest(config, `/api/public/cli/repos/${encodeURIComponent(args.repo)}/checkpoints/${encodeURIComponent(args.checkpoint)}/materialize`, {
+      method: "POST",
+      body: JSON.stringify({}),
     });
   }
   if (name === "coolstory_propose_change") {

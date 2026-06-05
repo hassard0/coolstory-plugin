@@ -198,6 +198,7 @@ Available MCP tools include:
 - `coolstory_context`
 - `coolstory_list_checkpoints`
 - `coolstory_create_checkpoint`
+- `coolstory_materialize_checkpoint`
 - `coolstory_propose_change`
 
 These tools only see repositories and artifacts allowed by the PAT.

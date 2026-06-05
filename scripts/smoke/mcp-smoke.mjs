@@ -42,6 +42,7 @@ try {
     "coolstory_context",
     "coolstory_list_checkpoints",
     "coolstory_create_checkpoint",
+    "coolstory_materialize_checkpoint",
     "coolstory_propose_change",
   ]) {
     assert(toolNames.includes(expected), `missing MCP tool: ${expected}`);

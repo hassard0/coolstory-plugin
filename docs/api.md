@@ -51,6 +51,12 @@ curl "$COOLSTORY_API_URL/api/public/cli/repos/<repo-slug>/checkpoints" \
     "summary": "Small coherent implementation slice.",
     "files": ["src/example.ts"]
   }'
+
+curl "$COOLSTORY_API_URL/api/public/cli/repos/<repo-slug>/checkpoints/<checkpoint-id>/materialize" \
+  -X POST \
+  -H "Authorization: Bearer $COOLSTORY_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{}'
 ```
 
 ## Git Snapshots
