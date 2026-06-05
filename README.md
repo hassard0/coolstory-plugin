@@ -203,6 +203,24 @@ Available MCP tools include:
 
 These tools only see repositories and artifacts allowed by the PAT.
 
+Agent config shape:
+
+```json
+{
+  "mcpServers": {
+    "coolstory": {
+      "command": "coolstory-mcp",
+      "env": {
+        "COOLSTORY_API_URL": "https://coolstory.dev",
+        "COOLSTORY_TOKEN": "cs_pat_xxxxxxxxxxxxxxxx"
+      }
+    }
+  }
+}
+```
+
+Detailed guide: [docs/mcp.md](docs/mcp.md)
+
 ## BMAD Integration
 
 BMAD teams should treat CoolStory as the source of truth for product artifacts, project context, checkpoints, and review history.
@@ -241,6 +259,7 @@ Detailed guide: [docs/bmad.md](docs/bmad.md)
 
 - [Getting started](docs/getting-started.md)
 - [BMAD integration](docs/bmad.md)
+- [MCP server](docs/mcp.md)
 - [Agent prompts](docs/agent-prompts.md)
 - [Collaboration workflow](docs/collaboration.md)
 - [API examples](docs/api.md)

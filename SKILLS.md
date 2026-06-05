@@ -37,6 +37,34 @@ Use `clone` when the BMAD client needs local project source context. It download
 
 Prefer `bmad start` over hand-assembling refs, clones, and artifact pulls. It prints the next `sync` and `handoff` commands for the agent.
 
+## MCP Mode
+
+Use MCP when the client can call tools directly instead of shell commands:
+
+```json
+{
+  "mcpServers": {
+    "coolstory": {
+      "command": "coolstory-mcp",
+      "env": {
+        "COOLSTORY_API_URL": "https://coolstory.dev",
+        "COOLSTORY_TOKEN": "cs_pat_xxxxxxxxxxxxxxxx"
+      }
+    }
+  }
+}
+```
+
+In MCP mode:
+
+- Call `coolstory_context` before planning.
+- Use `coolstory_list_artifacts` and `coolstory_get_artifact` to inspect existing work.
+- Use `coolstory_create_artifact` for new Markdown artifacts.
+- Use `coolstory_update_artifact` for existing artifacts.
+- Use `coolstory_create_checkpoint` for implementation milestones.
+- Use `coolstory_materialize_checkpoint` when queued checkpoint content should become durable immediately.
+- Use CLI commands for local file sync or source snapshots when the agent needs files on disk.
+
 ## Artifact Workflow
 
 List artifacts:

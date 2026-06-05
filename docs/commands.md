@@ -123,6 +123,8 @@ coolstory mcp
 
 Runs a stdio MCP server using `COOLSTORY_TOKEN` or the token saved by `coolstory auth login`.
 
+Use [MCP Server](mcp.md) for client config JSON, PAT setup, tool behavior, and the recommended BMAD loop.
+
 Tools:
 
 - `coolstory_whoami`
