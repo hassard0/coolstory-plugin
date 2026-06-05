@@ -8,7 +8,7 @@ import { spawn } from "node:child_process";
 import { Writable } from "node:stream";
 import { fileURLToPath } from "node:url";
 
-const VERSION = "0.1.18";
+const VERSION = "0.1.19";
 const DEFAULT_API_URL = "https://coolstory.dev";
 const CONFIG_PATH = join(homedir(), ".coolstory", "plugin.json");
 const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -273,13 +273,11 @@ async function prds(args) {
     requireValue(prd, "file");
     const options = parseOptions(rest);
     const content = await readFile(prd, "utf8");
-    const title = options.title || inferMarkdownTitle(content, prd);
-    const slug = options.slug || slugify(title);
-    const kind = options.kind || inferArtifactKind(prd);
+    const artifact = artifactMetadataFromFile(prd, content, options, { allowOptionSlug: true, allowOptionTitle: true });
     const body = {
-      title,
-      slug,
-      kind,
+      title: artifact.title,
+      slug: artifact.slug,
+      kind: artifact.kind,
       branch_name: options.branch || process.env.COOLSTORY_BRANCH || "main",
       status: options.status || "draft",
       content,
@@ -485,12 +483,15 @@ async function checkpoint(args) {
   for (const file of files) {
     if (!/\.md$/i.test(file)) continue;
     const content = await readFile(file, "utf8");
-    const title = optionValue(options, "artifact-title", "artifactTitle") || inferMarkdownTitle(content, file);
+    const artifact = artifactMetadataFromFile(file, content, options, {
+      allowOptionSlug: files.length === 1,
+      allowOptionTitle: files.length === 1,
+    });
     artifacts.push({
       path: file,
-      title,
-      slug: options.slug || slugify(title),
-      kind: options.kind || inferArtifactKind(file),
+      title: artifact.title,
+      slug: artifact.slug,
+      kind: artifact.kind,
       content,
     });
   }
@@ -534,15 +535,13 @@ async function context(args) {
 
 async function pushArtifactFile(config, repo, file, options, branch) {
   const content = await readFile(file, "utf8");
-  const title = optionValue(options, "title", "artifact-title", "artifactTitle") || inferMarkdownTitle(content, file);
-  const slug = options.slug || slugify(title);
-  const kind = options.kind || inferArtifactKind(file);
+  const artifact = artifactMetadataFromFile(file, content, options, { allowOptionSlug: true, allowOptionTitle: true });
   const response = await apiRequest(config, `/api/public/cli/repos/${encodeURIComponent(repo)}/prds`, {
     method: "POST",
     body: JSON.stringify({
-      title,
-      slug,
-      kind,
+      title: artifact.title,
+      slug: artifact.slug,
+      kind: artifact.kind,
       branch_name: branch,
       status: options.status || "draft",
       content,
@@ -553,17 +552,20 @@ async function pushArtifactFile(config, repo, file, options, branch) {
 
 async function createCheckpointFromFiles(config, repo, input) {
   const artifacts = [];
+  const mdFiles = input.files.filter((file) => /\.md$/i.test(file));
   for (const file of input.files) {
     if (!/\.md$/i.test(file)) continue;
     const content = await readFile(file, "utf8");
-    const title = optionValue(input.artifactOptions, "artifact-title", "artifactTitle")
-      || (input.useTitleForArtifact ? input.artifactOptions.title : undefined)
-      || inferMarkdownTitle(content, file);
+    const artifact = artifactMetadataFromFile(file, content, input.artifactOptions, {
+      allowOptionSlug: mdFiles.length === 1,
+      allowOptionTitle: mdFiles.length === 1 || input.useTitleForArtifact,
+      titleFallback: input.useTitleForArtifact ? input.artifactOptions.title : undefined,
+    });
     artifacts.push({
       path: file,
-      title,
-      slug: input.artifactOptions.slug || slugify(title),
-      kind: input.artifactOptions.kind || inferArtifactKind(file),
+      title: artifact.title,
+      slug: artifact.slug,
+      kind: artifact.kind,
       content,
     });
   }
@@ -923,14 +925,26 @@ function requireValue(value, name) {
   }
 }
 
+function artifactMetadataFromFile(filePath, content, options = {}, behavior = {}) {
+  const title = (behavior.allowOptionTitle ? optionValue(options, "title", "artifact-title", "artifactTitle") : undefined)
+    || behavior.titleFallback
+    || inferMarkdownTitle(content, filePath);
+  const slug = behavior.allowOptionSlug && options.slug ? options.slug : slugify(title);
+  return {
+    title,
+    slug,
+    kind: options.kind || inferArtifactKind(filePath, content),
+  };
+}
+
 function inferMarkdownTitle(content, filePath) {
   const heading = content.match(/^#\s+(.+?)\s*$/m)?.[1]?.trim();
   if (heading) return heading.replace(/^PRD:\s*/i, "").trim();
   return basename(filePath).replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ").trim() || "Untitled artifact";
 }
 
-function inferArtifactKind(filePath) {
-  const name = basename(filePath).toLowerCase();
+function inferArtifactKind(filePath, content = "") {
+  const name = `${filePath}\n${content.slice(0, 2000)}`.toLowerCase();
   if (name.includes("architecture")) return "architecture";
   if (name.includes("frontend") || name.includes("front-end")) return "frontend_spec";
   if (name.includes("brief")) return "project_brief";
