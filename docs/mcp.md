@@ -6,27 +6,21 @@ Use hosted MCP by default when the agent runtime can call remote tools. Use loca
 
 ## Hosted MCP
 
-Create a CoolStory PAT in the web app under Settings, then configure remote-capable MCP clients with:
+Create a CoolStory PAT in the web app under Settings, then register the hosted MCP server in remote-capable clients:
 
-```json
-{
-  "mcpServers": {
-    "coolstory": {
-      "url": "https://coolstory.dev/api/mcp",
-      "headers": {
-        "Authorization": "Bearer cs_pat_xxxxxxxxxxxxxxxx"
-      }
-    }
-  }
-}
+```text
+Server URL: https://coolstory.dev/api/mcp
+Transport: MCP Streamable HTTP
+Auth: Bearer token through the client's remote-MCP auth flow
+Protected resource metadata: https://coolstory.dev/.well-known/oauth-protected-resource
 ```
 
 Hosted MCP is the preferred path for managed agents because there is no local package install, no local token file, and every tool request is authorized by the CoolStory backend.
 
-You can inspect the hosted endpoint:
+The MCP URL is not a browser documentation page. It is a Streamable HTTP MCP endpoint: clients call it with JSON-RPC over POST, `Accept: application/json, text/event-stream`, and a bearer token when invoking protected tools.
 
 ```bash
-curl https://coolstory.dev/api/mcp
+curl https://coolstory.dev/.well-known/oauth-protected-resource
 ```
 
 ## Local Stdio MCP

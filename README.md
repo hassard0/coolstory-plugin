@@ -173,19 +173,13 @@ coolstory artifacts kinds
 
 ## MCP Server
 
-CoolStory hosts a PAT-backed MCP endpoint at `https://coolstory.dev/api/mcp`. Use hosted MCP by default for managed agents:
+CoolStory hosts a PAT-backed MCP Streamable HTTP endpoint at `https://coolstory.dev/api/mcp`. Use hosted MCP by default for managed agents:
 
-```json
-{
-  "mcpServers": {
-    "coolstory": {
-      "url": "https://coolstory.dev/api/mcp",
-      "headers": {
-        "Authorization": "Bearer cs_pat_xxxxxxxxxxxxxxxx"
-      }
-    }
-  }
-}
+```text
+Server URL: https://coolstory.dev/api/mcp
+Transport: MCP Streamable HTTP
+Auth: Bearer token through the client's remote-MCP auth flow
+Protected resource metadata: https://coolstory.dev/.well-known/oauth-protected-resource
 ```
 
 Use the dependency-free local stdio server only when the agent client requires a local command:

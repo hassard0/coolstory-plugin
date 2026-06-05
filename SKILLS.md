@@ -41,17 +41,11 @@ Prefer `bmad start` over hand-assembling refs, clones, and artifact pulls. It pr
 
 Use hosted MCP when the client can call remote tools directly instead of shell commands:
 
-```json
-{
-  "mcpServers": {
-    "coolstory": {
-      "url": "https://coolstory.dev/api/mcp",
-      "headers": {
-        "Authorization": "Bearer cs_pat_xxxxxxxxxxxxxxxx"
-      }
-    }
-  }
-}
+```text
+Server URL: https://coolstory.dev/api/mcp
+Transport: MCP Streamable HTTP
+Auth: Bearer token through the client's remote-MCP auth flow
+Protected resource metadata: https://coolstory.dev/.well-known/oauth-protected-resource
 ```
 
 Use local stdio MCP only when the client requires a local command:

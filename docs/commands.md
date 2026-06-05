@@ -125,20 +125,14 @@ Runs a local stdio MCP server using `COOLSTORY_TOKEN` or the token saved by `coo
 
 Prefer hosted MCP for managed agents:
 
-```json
-{
-  "mcpServers": {
-    "coolstory": {
-      "url": "https://coolstory.dev/api/mcp",
-      "headers": {
-        "Authorization": "Bearer cs_pat_xxxxxxxxxxxxxxxx"
-      }
-    }
-  }
-}
+```text
+Server URL: https://coolstory.dev/api/mcp
+Transport: MCP Streamable HTTP
+Auth: Bearer token through the client's remote-MCP auth flow
+Protected resource metadata: https://coolstory.dev/.well-known/oauth-protected-resource
 ```
 
-Use [MCP Server](mcp.md) for client config JSON, PAT setup, tool behavior, and the recommended BMAD loop.
+Use [MCP Server](mcp.md) for hosted transport details, local stdio fallback, PAT setup, tool behavior, and the recommended BMAD loop.
 
 Tools:
 
