@@ -31,7 +31,7 @@ curl https://coolstory.dev/.well-known/oauth-protected-resource
 Install the public integration package:
 
 ```bash
-npm install -g github:hassard0/coolstory-plugin
+npm install -g coolstory-plugin
 ```
 
 Verify both binaries:

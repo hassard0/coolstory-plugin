@@ -1,0 +1,20 @@
+class Coolstory < Formula
+  desc "CoolStory agent, BMAD, MCP, and desktop CLI integration"
+  homepage "https://coolstory.dev"
+  url "https://github.com/hassard0/coolstory-plugin/archive/refs/tags/vVERSION.tar.gz"
+  sha256 "SOURCE_TARBALL_SHA256"
+  license "MIT"
+
+  depends_on "node@20"
+
+  def install
+    npm = Formula["node@20"].opt_bin/"npm"
+    system npm, "install", *Language::Node.std_npm_install_args(libexec)
+    bin.install_symlink Dir["#{libexec}/bin/*"]
+  end
+
+  test do
+    assert_match "coolstory", shell_output("#{bin}/coolstory --help")
+    assert_predicate bin/"coolstory-mcp", :exist?
+  end
+end

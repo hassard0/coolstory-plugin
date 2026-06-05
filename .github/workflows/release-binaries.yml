@@ -41,7 +41,7 @@ jobs:
           node-version: 24
 
       - name: Install
-        run: npm install
+        run: npm ci
 
       - name: Smoke
         run: npm run smoke
@@ -61,14 +61,24 @@ jobs:
       - name: Packaged desktop smoke
         run: npm run smoke:desktop:packaged
 
+      - name: Generate checksum
+        shell: pwsh
+        run: |
+          $hash = (Get-FileHash -Algorithm SHA256 "${{ matrix.output }}").Hash.ToLower()
+          "$hash  ${{ matrix.artifact }}" | Set-Content -NoNewline "${{ matrix.output }}.sha256"
+
       - name: Upload workflow artifacts
         uses: actions/upload-artifact@v5
         with:
           name: ${{ matrix.artifact }}
-          path: ${{ matrix.output }}
+          path: |
+            ${{ matrix.output }}
+            ${{ matrix.output }}.sha256
 
       - name: Publish GitHub release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v3
         with:
-          files: ${{ matrix.output }}
+          files: |
+            ${{ matrix.output }}
+            ${{ matrix.output }}.sha256

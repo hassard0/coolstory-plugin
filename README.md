@@ -21,6 +21,12 @@ This repository is intentionally separate from the private CoolStory product rep
 Requires Node.js 20 or newer.
 
 ```bash
+npm install -g coolstory-plugin
+```
+
+GitHub fallback before the npm package is published:
+
+```bash
 npm install -g github:hassard0/coolstory-plugin
 ```
 
@@ -63,6 +69,10 @@ npm run build:desktop
 The generated desktop package is written to `dist-electron/`.
 
 Windows and macOS packages are built by GitHub Actions on native runners using Electron. Source installs still require Node.js 20 or newer. Run the `Release Binaries` workflow or push a `v*` tag.
+
+## Homebrew
+
+A tap formula template is available at [homebrew/coolstory.rb.template](homebrew/coolstory.rb.template). Tap maintainers can copy it into `Formula/coolstory.rb`, fill in the release tag and source tarball SHA, then run `brew test coolstory`.
 
 ## Connect
 
@@ -276,6 +286,7 @@ Detailed guide: [docs/bmad.md](docs/bmad.md)
 - [API examples](docs/api.md)
 - [Command reference](docs/commands.md)
 - [Releases and binaries](docs/releases.md)
+- [Homebrew tap](docs/homebrew.md)
 - [Security model](docs/security.md)
 - [Troubleshooting](docs/troubleshooting.md)
 

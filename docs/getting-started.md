@@ -5,7 +5,7 @@ This guide gets a developer or agent from zero to a CoolStory checkpoint.
 ## 1. Install
 
 ```bash
-npm install -g github:hassard0/coolstory-plugin
+npm install -g coolstory-plugin
 ```
 
 Verify:

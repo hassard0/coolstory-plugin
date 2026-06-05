@@ -14,7 +14,7 @@ CoolStory should be used as the durable collaboration layer:
 Install the public plugin:
 
 ```bash
-npm install -g github:hassard0/coolstory-plugin
+npm install -g coolstory-plugin
 ```
 
 Authenticate with a CoolStory personal access token:

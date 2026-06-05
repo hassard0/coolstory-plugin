@@ -33,7 +33,7 @@ coolstory repos list
 coolstory artifacts list <repo-slug>
 ```
 
-## Cannot install from GitHub
+## Cannot install from npm
 
 Confirm Node.js 20 or newer:
 
@@ -42,6 +42,12 @@ node --version
 ```
 
 Then reinstall:
+
+```bash
+npm install -g coolstory-plugin
+```
+
+If the npm package is not available yet, install from the public GitHub repository:
 
 ```bash
 npm install -g github:hassard0/coolstory-plugin

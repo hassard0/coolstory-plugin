@@ -5,8 +5,24 @@ The plugin can run through Node.js for CLI workflows or as a desktop app package
 ## Node Install
 
 ```bash
+npm install -g coolstory-plugin
+```
+
+GitHub fallback before the npm package is published:
+
+```bash
 npm install -g github:hassard0/coolstory-plugin
 ```
+
+## npm Publishing
+
+The `Publish npm` workflow runs on `v*` tags or manually through workflow dispatch. It installs with `npm ci`, runs CLI smoke, optionally runs MCP smoke when `COOLSTORY_MCP_SMOKE_TOKEN` is configured, inspects package contents with `npm pack --dry-run`, and publishes with provenance enabled.
+
+Required setup:
+
+- Configure npm trusted publishing for this repository, or add an `NPM_TOKEN` repository secret.
+- Push a tag that matches `package.json`, for example `v0.1.21`.
+- Use manual dispatch with `dry_run` enabled before the first public publish.
 
 ## Binary Builds
 
@@ -26,6 +42,12 @@ The workflow must pass four gates before assets are uploaded:
 - Packaged desktop app smoke: `npm run smoke:desktop:packaged`
 
 The packaged smoke launches the built app on the native runner, verifies it opens a local Electron window, checks the landscape window size, confirms the device-code sign-in action is rendered, and asserts project, artifact type, artifact, avatar, editor, and sidebar resize elements exist.
+
+Each desktop asset is uploaded with a matching `.sha256` file for release consumers and tap maintainers.
+
+## Homebrew Tap Publishing
+
+Use [Homebrew tap](homebrew.md) and [homebrew/coolstory.rb.template](../homebrew/coolstory.rb.template) when updating a public tap formula.
 
 ## Latest Verified Release
 

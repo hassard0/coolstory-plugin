@@ -173,3 +173,11 @@ Outputs:
 - `dist-electron/coolstory-desktop-linux-x64.AppImage`
 
 Windows and macOS packages are built by the `Release Binaries` GitHub Actions workflow on native runners using Electron. Source installs still require Node.js 20 or newer.
+
+## Package Install
+
+```bash
+npm install -g coolstory-plugin
+```
+
+Homebrew tap maintainers can use [Homebrew tap](homebrew.md) for the formula template and release checklist.

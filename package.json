@@ -4,6 +4,14 @@
   "description": "Public CoolStory agent and CLI integration plugin.",
   "type": "module",
   "main": "electron-main.cjs",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hassard0/coolstory-plugin.git"
+  },
+  "homepage": "https://github.com/hassard0/coolstory-plugin#readme",
+  "bugs": {
+    "url": "https://github.com/hassard0/coolstory-plugin/issues"
+  },
   "bin": {
     "coolstory-desktop": "src/index.js",
     "coolstory-plugin": "src/index.js",
@@ -16,6 +24,7 @@
   "files": [
     "src",
     "docs",
+    "homebrew",
     "coolstory.plugin.json",
     "SKILLS.md",
     "README.md",
@@ -26,6 +35,7 @@
     "smoke:mcp": "node scripts/smoke/mcp-smoke.mjs",
     "smoke:desktop": "node scripts/smoke/desktop-smoke.mjs",
     "smoke:desktop:packaged": "node scripts/smoke/packaged-desktop-smoke.mjs",
+    "prepack": "npm run smoke",
     "start:desktop": "electron .",
     "build:bundle": "esbuild src/index.js --bundle --platform=node --format=cjs --outfile=dist/sea-entry.cjs",
     "build:binary": "npm run build:bundle && node scripts/build-sea.mjs",
@@ -86,6 +96,11 @@
     "prd"
   ],
   "license": "MIT",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/",
+    "provenance": true
+  },
   "devDependencies": {
     "electron": "^42.3.3",
     "electron-builder": "^26.8.1",
