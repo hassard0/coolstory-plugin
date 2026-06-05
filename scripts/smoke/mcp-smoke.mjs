@@ -31,7 +31,19 @@ try {
 
   const listed = await request("tools/list", {});
   const toolNames = (listed.tools ?? []).map((tool) => tool.name);
-  for (const expected of ["coolstory_whoami", "coolstory_list_repos", "coolstory_list_artifacts", "coolstory_get_artifact", "coolstory_context", "coolstory_create_checkpoint"]) {
+  for (const expected of [
+    "coolstory_whoami",
+    "coolstory_list_repos",
+    "coolstory_list_artifacts",
+    "coolstory_get_artifact",
+    "coolstory_create_artifact",
+    "coolstory_update_artifact",
+    "coolstory_search_artifacts",
+    "coolstory_context",
+    "coolstory_list_checkpoints",
+    "coolstory_create_checkpoint",
+    "coolstory_propose_change",
+  ]) {
     assert(toolNames.includes(expected), `missing MCP tool: ${expected}`);
   }
 

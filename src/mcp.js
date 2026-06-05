@@ -38,12 +38,72 @@ const tools = [
     },
   },
   {
+    name: "coolstory_create_artifact",
+    description: "Create or update a CoolStory artifact and materialize it to a branch.",
+    inputSchema: {
+      type: "object",
+      required: ["repo", "title", "content"],
+      properties: {
+        repo: { type: "string" },
+        title: { type: "string" },
+        content: { type: "string" },
+        slug: { type: "string" },
+        kind: { type: "string" },
+        branch: { type: "string" },
+        status: { type: "string" },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "coolstory_update_artifact",
+    description: "Update a CoolStory artifact by slug and materialize it to a branch.",
+    inputSchema: {
+      type: "object",
+      required: ["repo", "artifact", "title", "content"],
+      properties: {
+        repo: { type: "string" },
+        artifact: { type: "string" },
+        title: { type: "string" },
+        content: { type: "string" },
+        kind: { type: "string" },
+        branch: { type: "string" },
+        status: { type: "string" },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "coolstory_search_artifacts",
+    description: "Search artifact titles, slugs, kinds, and content snippets in one repository.",
+    inputSchema: {
+      type: "object",
+      required: ["repo", "query"],
+      properties: {
+        repo: { type: "string" },
+        query: { type: "string" },
+        limit: { type: "number" },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
     name: "coolstory_context",
     description: "Fetch repo refs, artifact list, and optional artifact body for agent context.",
     inputSchema: {
       type: "object",
       required: ["repo"],
       properties: { repo: { type: "string" }, artifact: { type: "string" } },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "coolstory_list_checkpoints",
+    description: "List recent checkpoints in a CoolStory repository.",
+    inputSchema: {
+      type: "object",
+      required: ["repo"],
+      properties: { repo: { type: "string" } },
       additionalProperties: false,
     },
   },
@@ -59,6 +119,38 @@ const tools = [
         branch: { type: "string" },
         summary: { type: "string" },
         files: { type: "array", items: { type: "string" } },
+        artifacts: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              path: { type: "string" },
+              title: { type: "string" },
+              slug: { type: "string" },
+              kind: { type: "string" },
+              content: { type: "string" },
+            },
+            required: ["content"],
+            additionalProperties: false,
+          },
+        },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "coolstory_propose_change",
+    description: "Create a CoolStory pull request for an artifact branch change.",
+    inputSchema: {
+      type: "object",
+      required: ["repo", "artifact", "source_branch", "title"],
+      properties: {
+        repo: { type: "string" },
+        artifact: { type: "string" },
+        source_branch: { type: "string" },
+        target_branch: { type: "string" },
+        title: { type: "string" },
+        body: { type: "string" },
       },
       additionalProperties: false,
     },
@@ -112,7 +204,7 @@ async function handle(message) {
     send(message.id, {
       protocolVersion: "2024-11-05",
       capabilities: { tools: {} },
-      serverInfo: { name: "coolstory-mcp", version: "0.1.17" },
+      serverInfo: { name: "coolstory-mcp", version: "0.1.18" },
     });
     return;
   }
@@ -144,6 +236,39 @@ async function callTool(name, args) {
     requireArg(args.artifact, "artifact");
     return apiRequest(config, `/api/public/cli/repos/${encodeURIComponent(args.repo)}/prds/${encodeURIComponent(args.artifact)}`);
   }
+  if (name === "coolstory_create_artifact") {
+    requireArg(args.repo, "repo");
+    requireArg(args.title, "title");
+    requireArg(args.content, "content");
+    return upsertArtifact(config, args, args.slug);
+  }
+  if (name === "coolstory_update_artifact") {
+    requireArg(args.repo, "repo");
+    requireArg(args.artifact, "artifact");
+    requireArg(args.title, "title");
+    requireArg(args.content, "content");
+    return upsertArtifact(config, args, args.artifact);
+  }
+  if (name === "coolstory_search_artifacts") {
+    requireArg(args.repo, "repo");
+    requireArg(args.query, "query");
+    const listed = await apiRequest(config, `/api/public/cli/repos/${encodeURIComponent(args.repo)}/prds`);
+    const query = args.query.toLowerCase();
+    const limit = Number.isFinite(args.limit) ? Math.max(1, Math.min(50, Math.floor(args.limit))) : 10;
+    const candidates = listed.prds ?? [];
+    const detailed = [];
+    for (const artifact of candidates) {
+      const detail = await apiRequest(config, `/api/public/cli/repos/${encodeURIComponent(args.repo)}/prds/${encodeURIComponent(artifact.slug)}`).catch(() => null);
+      const content = detail?.prd?.content ?? "";
+      if (!matchesArtifactSummary(artifact, query) && !content.toLowerCase().includes(query)) continue;
+      detailed.push({
+        ...artifact,
+        content_snippet: snippet(content, query),
+      });
+      if (detailed.length >= limit) break;
+    }
+    return { repo: listed.repo, artifacts: detailed };
+  }
   if (name === "coolstory_context") {
     requireArg(args.repo, "repo");
     const [repos, artifacts, refs, artifact] = await Promise.all([
@@ -161,6 +286,10 @@ async function callTool(name, args) {
       artifact: artifact?.prd ?? null,
     };
   }
+  if (name === "coolstory_list_checkpoints") {
+    requireArg(args.repo, "repo");
+    return apiRequest(config, `/api/public/cli/repos/${encodeURIComponent(args.repo)}/checkpoints`);
+  }
   if (name === "coolstory_create_checkpoint") {
     requireArg(args.repo, "repo");
     requireArg(args.title, "title");
@@ -171,10 +300,55 @@ async function callTool(name, args) {
         branch: args.branch || "main",
         summary: args.summary || "",
         files: Array.isArray(args.files) ? args.files : [],
+        artifacts: Array.isArray(args.artifacts) ? args.artifacts : [],
+      }),
+    });
+  }
+  if (name === "coolstory_propose_change") {
+    requireArg(args.repo, "repo");
+    requireArg(args.artifact, "artifact");
+    requireArg(args.source_branch, "source_branch");
+    requireArg(args.title, "title");
+    return apiRequest(config, `/api/public/cli/repos/${encodeURIComponent(args.repo)}/pulls`, {
+      method: "POST",
+      body: JSON.stringify({
+        artifact_slug: args.artifact,
+        source_branch: args.source_branch,
+        target_branch: args.target_branch,
+        title: args.title,
+        body: args.body || "",
       }),
     });
   }
   throw new Error(`Unknown tool: ${name}`);
+}
+
+async function upsertArtifact(config, args, slug) {
+  return apiRequest(config, `/api/public/cli/repos/${encodeURIComponent(args.repo)}/prds`, {
+    method: "POST",
+    body: JSON.stringify({
+      title: args.title,
+      slug,
+      kind: args.kind || "prd",
+      branch_name: args.branch || "main",
+      content: args.content,
+      status: args.status || "draft",
+    }),
+  });
+}
+
+function matchesArtifactSummary(artifact, query) {
+  return [artifact.title, artifact.slug, artifact.kind, artifact.status, artifact.branch_name]
+    .filter(Boolean)
+    .some((value) => String(value).toLowerCase().includes(query));
+}
+
+function snippet(content, query) {
+  if (!content) return "";
+  const lower = content.toLowerCase();
+  const index = lower.indexOf(query);
+  if (index === -1) return content.slice(0, 240);
+  return content.slice(Math.max(0, index - 100), Math.min(content.length, index + query.length + 140));
 }
 
 async function requireAuth() {

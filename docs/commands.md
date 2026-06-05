@@ -126,8 +126,13 @@ Tools:
 - `coolstory_list_repos`
 - `coolstory_list_artifacts`
 - `coolstory_get_artifact`
+- `coolstory_create_artifact`
+- `coolstory_update_artifact`
+- `coolstory_search_artifacts`
 - `coolstory_context`
+- `coolstory_list_checkpoints`
 - `coolstory_create_checkpoint`
+- `coolstory_propose_change`
 
 ## Checkpoints
 

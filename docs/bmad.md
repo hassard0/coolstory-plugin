@@ -36,7 +36,7 @@ For MCP-capable agents, run the PAT-backed server instead of shelling out for ev
 coolstory-mcp
 ```
 
-The MCP server exposes repo, artifact, context, and checkpoint tools using the same PAT and authorization model.
+The MCP server exposes repo, artifact read/write/search, context, checkpoint, and proposed-change tools using the same PAT and authorization model.
 
 ## Recommended BMAD Agent Loop
 
