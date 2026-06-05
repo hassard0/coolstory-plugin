@@ -121,7 +121,22 @@ coolstory-mcp
 coolstory mcp
 ```
 
-Runs a stdio MCP server using `COOLSTORY_TOKEN` or the token saved by `coolstory auth login`.
+Runs a local stdio MCP server using `COOLSTORY_TOKEN` or the token saved by `coolstory auth login`.
+
+Prefer hosted MCP for managed agents:
+
+```json
+{
+  "mcpServers": {
+    "coolstory": {
+      "url": "https://coolstory.dev/api/mcp",
+      "headers": {
+        "Authorization": "Bearer cs_pat_xxxxxxxxxxxxxxxx"
+      }
+    }
+  }
+}
+```
 
 Use [MCP Server](mcp.md) for client config JSON, PAT setup, tool behavior, and the recommended BMAD loop.
 

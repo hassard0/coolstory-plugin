@@ -35,7 +35,7 @@ The package exposes:
 - `coolstory`: canonical headless CLI for BMAD agents and automation.
 - `coolstory-desktop`: desktop GUI launcher and CLI-compatible alias.
 - `coolstory-plugin`: compatibility alias.
-- `coolstory-mcp`: PAT-backed MCP stdio server for agent clients.
+- `coolstory-mcp`: local PAT-backed MCP stdio server for clients that cannot use hosted MCP.
 
 Launch the desktop GUI:
 
@@ -173,7 +173,22 @@ coolstory artifacts kinds
 
 ## MCP Server
 
-CoolStory ships a dependency-free MCP stdio server backed by the same PAT used by the CLI.
+CoolStory hosts a PAT-backed MCP endpoint at `https://coolstory.dev/api/mcp`. Use hosted MCP by default for managed agents:
+
+```json
+{
+  "mcpServers": {
+    "coolstory": {
+      "url": "https://coolstory.dev/api/mcp",
+      "headers": {
+        "Authorization": "Bearer cs_pat_xxxxxxxxxxxxxxxx"
+      }
+    }
+  }
+}
+```
+
+Use the dependency-free local stdio server only when the agent client requires a local command:
 
 ```bash
 coolstory auth login --token cs_pat_xxxxxxxxxxxxxxxx
@@ -203,7 +218,7 @@ Available MCP tools include:
 
 These tools only see repositories and artifacts allowed by the PAT.
 
-Agent config shape:
+Local stdio agent config shape:
 
 ```json
 {

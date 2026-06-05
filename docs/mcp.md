@@ -1,10 +1,37 @@
 # MCP Server
 
-CoolStory includes `coolstory-mcp`, a PAT-backed stdio MCP server for agent clients that prefer structured tools over shell commands.
+CoolStory exposes a hosted PAT-backed MCP endpoint at `https://coolstory.dev/api/mcp` and also includes `coolstory-mcp`, a local stdio MCP server for clients that cannot use hosted MCP.
 
-Use MCP when the agent runtime can call tools directly. Use the `coolstory` CLI when the agent is shell-first or needs local file operations such as `bmad start`, `bmad sync`, `clone`, or `bmad handoff`.
+Use hosted MCP by default when the agent runtime can call remote tools. Use local stdio MCP when the client requires a local command. Use the `coolstory` CLI when the agent is shell-first or needs local file operations such as `bmad start`, `bmad sync`, `clone`, or `bmad handoff`.
 
-## Install
+## Hosted MCP
+
+Create a CoolStory PAT in the web app under Settings, then configure remote-capable MCP clients with:
+
+```json
+{
+  "mcpServers": {
+    "coolstory": {
+      "url": "https://coolstory.dev/api/mcp",
+      "headers": {
+        "Authorization": "Bearer cs_pat_xxxxxxxxxxxxxxxx"
+      }
+    }
+  }
+}
+```
+
+Hosted MCP is the preferred path for managed agents because there is no local package install, no local token file, and every tool request is authorized by the CoolStory backend.
+
+You can inspect the hosted endpoint:
+
+```bash
+curl https://coolstory.dev/api/mcp
+```
+
+## Local Stdio MCP
+
+Install the public integration package:
 
 ```bash
 npm install -g github:hassard0/coolstory-plugin
@@ -17,9 +44,7 @@ coolstory --help
 coolstory-mcp --help
 ```
 
-## Authenticate
-
-Create a CoolStory PAT in the web app under Settings, then either save it locally:
+Then either save the PAT locally:
 
 ```bash
 coolstory auth login --token cs_pat_xxxxxxxxxxxxxxxx
@@ -32,9 +57,9 @@ Or pass credentials through the agent runtime environment:
 COOLSTORY_API_URL=https://coolstory.dev COOLSTORY_TOKEN=cs_pat_xxxxxxxxxxxxxxxx coolstory-mcp
 ```
 
-## Agent Config
+## Local Agent Config
 
-Most MCP clients accept a config shaped like this:
+For stdio-only clients, use a config shaped like this:
 
 ```json
 {
@@ -50,7 +75,7 @@ Most MCP clients accept a config shaped like this:
 }
 ```
 
-If the agent process already has `COOLSTORY_API_URL` and `COOLSTORY_TOKEN`, the `env` block can be omitted.
+If the local agent process already has `COOLSTORY_API_URL` and `COOLSTORY_TOKEN`, the `env` block can be omitted.
 
 ## Tools
 

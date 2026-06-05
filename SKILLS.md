@@ -39,7 +39,22 @@ Prefer `bmad start` over hand-assembling refs, clones, and artifact pulls. It pr
 
 ## MCP Mode
 
-Use MCP when the client can call tools directly instead of shell commands:
+Use hosted MCP when the client can call remote tools directly instead of shell commands:
+
+```json
+{
+  "mcpServers": {
+    "coolstory": {
+      "url": "https://coolstory.dev/api/mcp",
+      "headers": {
+        "Authorization": "Bearer cs_pat_xxxxxxxxxxxxxxxx"
+      }
+    }
+  }
+}
+```
+
+Use local stdio MCP only when the client requires a local command:
 
 ```json
 {
