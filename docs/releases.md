@@ -18,9 +18,10 @@ GitHub Actions builds:
 
 Run the `Release Binaries` workflow manually or push a `v*` tag.
 
-The workflow must pass three gates before assets are uploaded:
+The workflow must pass four gates before assets are uploaded:
 
 - CLI smoke: `npm run smoke`
+- MCP protocol smoke: `npm run smoke:mcp`
 - Source desktop smoke: `npm run smoke:desktop`
 - Packaged desktop app smoke: `npm run smoke:desktop:packaged`
 
@@ -28,15 +29,15 @@ The packaged smoke launches the built app on the native runner, verifies it open
 
 ## Latest Verified Release
 
-`v0.1.16` passed packaged app smoke on:
+`v0.1.17` passed MCP, CLI, source desktop, and packaged app smoke on:
 
 - Windows Server 2025 runner for `coolstory-desktop-win-x64.exe`
 - macOS 14 ARM runner for `coolstory-desktop-macos-arm64.zip`
 - Ubuntu 24.04 runner for `coolstory-desktop-linux-x64.AppImage`
 
-This release also adds the `coolstory-mcp` PAT-backed MCP stdio server for BMAD and other MCP-capable agents.
+This release verifies the `coolstory-mcp` PAT-backed MCP stdio server in CI before publishing binaries.
 
-Release page: https://github.com/hassard0/coolstory-plugin/releases/tag/v0.1.16
+Release page: https://github.com/hassard0/coolstory-plugin/releases/tag/v0.1.17
 
 ## Local Native Build
 
