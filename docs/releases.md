@@ -29,15 +29,15 @@ The packaged smoke launches the built app on the native runner, verifies it open
 
 ## Latest Verified Release
 
-`v0.1.18` passed MCP, CLI, source desktop, and packaged app smoke on:
+`v0.1.19` passed MCP, CLI, source desktop, and packaged app smoke on:
 
 - Windows Server 2025 runner for `coolstory-desktop-win-x64.exe`
 - macOS 14 ARM runner for `coolstory-desktop-macos-arm64.zip`
 - Ubuntu 24.04 runner for `coolstory-desktop-linux-x64.AppImage`
 
-This release verifies the expanded `coolstory-mcp` tool contract in CI before publishing binaries.
+This release improves BMAD Markdown artifact metadata inference so synced docs get stable slugs and kinds without requiring humans to hand-pick unique numbers.
 
-Release page: https://github.com/hassard0/coolstory-plugin/releases/tag/v0.1.18
+Release page: https://github.com/hassard0/coolstory-plugin/releases/tag/v0.1.19
 
 ## Local Native Build
 
