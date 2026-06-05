@@ -107,6 +107,7 @@ coolstory artifacts list <repo-slug>
 coolstory bmad start <repo-slug> <artifact-slug> --branch feature/my-work --dir ./workspace
 coolstory bmad sync <repo-slug> docs/artifact.md --branch feature/my-work --kind prd
 coolstory bmad handoff <repo-slug> --branch feature/my-work --title "Implemented artifact slice" --file <path>
+coolstory checkpoints materialize <repo-slug> <checkpoint-id>
 ```
 
 ## Common Workflows
@@ -136,6 +137,12 @@ Queue a checkpoint for the current branch:
 
 ```bash
 coolstory checkpoint "Agent implementation checkpoint" --repo my-project --branch feature/agent-work --file src/app.ts
+```
+
+Materialize a queued checkpoint and import attached Markdown artifact payloads:
+
+```bash
+coolstory checkpoints materialize my-project <checkpoint-id>
 ```
 
 Push a BMAD-created Markdown file back as a CoolStory artifact:

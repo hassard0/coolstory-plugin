@@ -60,6 +60,12 @@ coolstory bmad sync <repo-slug> <file.md> --kind prd --branch <branch>
 
 Use `bmad sync` for first-time BMAD docs and updates. It creates or updates the artifact, attaches the Markdown content to the checkpoint, and does not require a human-supplied materialization ID.
 
+Materialize a queued checkpoint when the web app or API has not done it yet:
+
+```bash
+coolstory checkpoints materialize <repo-slug> <checkpoint-id>
+```
+
 Use `--kind` values:
 
 ```text

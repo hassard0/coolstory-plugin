@@ -91,6 +91,7 @@ coolstory artifacts update <repo-slug> <file.md> [--title "..."] [--kind prd] [-
 coolstory bmad start <repo-slug> [artifact-slug] [--branch feature/name] [--from main] [--dir ./workspace] [--pull docs/artifact.md] [--no-pull] [--force] [--json]
 coolstory bmad sync <repo-slug> <file.md> [--branch feature/name] [--kind prd] [--slug slug] [--title "..."] [--checkpoint "..."] [--summary "..."] [--json]
 coolstory bmad handoff <repo-slug> --branch feature/name --title "..." [--summary "..."] [--file path ...] [--artifact slug] [--pr-title "..."] [--target main] [--json]
+coolstory checkpoints materialize <repo-slug> <checkpoint-id> [--json]
 ```
 
 `bmad start` creates or reuses a branch, optionally pulls an artifact to a local Markdown file, and optionally extracts a repo snapshot into a workspace.
@@ -98,6 +99,8 @@ coolstory bmad handoff <repo-slug> --branch feature/name --title "..." [--summar
 `bmad sync` is the preferred way for BMAD clients to materialize or update Markdown artifacts. It pushes the artifact content and queues a checkpoint carrying the same content so the web app can show it immediately.
 
 `bmad handoff` queues the implementation checkpoint for changed files. When `--artifact` and `--pr-title` are supplied, it also opens a CoolStory pull request for the artifact branch comparison.
+
+`checkpoints materialize` turns a queued checkpoint into a branch commit and imports attached Markdown artifact payloads into the CoolStory artifact library.
 
 ## Context And Skills
 

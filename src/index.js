@@ -8,7 +8,7 @@ import { spawn } from "node:child_process";
 import { Writable } from "node:stream";
 import { fileURLToPath } from "node:url";
 
-const VERSION = "0.1.19";
+const VERSION = "0.1.20";
 const DEFAULT_API_URL = "https://coolstory.dev";
 const CONFIG_PATH = join(homedir(), ".coolstory", "plugin.json");
 const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -79,6 +79,7 @@ Usage:
   coolstory prds list <repo>                         # legacy alias
   coolstory prds get <repo> <prd> [--json]            # legacy alias
   coolstory checkpoints list <repo>
+  coolstory checkpoints materialize <repo> <checkpoint-id> [--json]
   coolstory checkpoint <title> --repo <repo> [--summary "..."] [--file path ...]
   coolstory context <repo> [artifact-slug]
   coolstory skills
@@ -454,17 +455,36 @@ async function bmad(args) {
 }
 
 async function checkpoints(args) {
-  const [subcommand, repo] = args;
-  if (subcommand !== "list") {
-    throw new Error("Usage: coolstory checkpoints list <repo>");
-  }
+  const [subcommand, repo, checkpointId, ...rest] = args;
   requireValue(repo, "repo");
   const config = await requireAuth();
-  const response = await apiRequest(config, `/api/public/cli/repos/${encodeURIComponent(repo)}/checkpoints`);
-  for (const item of response.checkpoints ?? []) {
-    const sha = item.commit_sha ? ` ${item.commit_sha.slice(0, 12)}` : "";
-    console.log(`${item.status} ${item.branch}${sha} ${item.title}`);
+  if (subcommand === "list") {
+    const response = await apiRequest(config, `/api/public/cli/repos/${encodeURIComponent(repo)}/checkpoints`);
+    for (const item of response.checkpoints ?? []) {
+      const sha = item.commit_sha ? ` ${item.commit_sha.slice(0, 12)}` : "";
+      console.log(`${item.status} ${item.branch}${sha} ${item.title}`);
+    }
+    return;
   }
+  if (subcommand === "materialize") {
+    requireValue(checkpointId, "checkpoint-id");
+    const options = parseOptions(rest);
+    const response = await apiRequest(config, `/api/public/cli/repos/${encodeURIComponent(repo)}/checkpoints/${encodeURIComponent(checkpointId)}/materialize`, {
+      method: "POST",
+      body: JSON.stringify({}),
+    });
+    if (options.json) {
+      console.log(JSON.stringify(response, null, 2));
+      return;
+    }
+    console.log(`Materialized checkpoint ${response.checkpoint?.id} on ${response.checkpoint?.branch}`);
+    if (response.checkpoint?.commit_sha) console.log(`Commit ${response.checkpoint.commit_sha}`);
+    for (const artifact of response.imported_artifacts ?? []) {
+      console.log(`Artifact: ${artifact.slug} (${artifact.kind})`);
+    }
+    return;
+  }
+  throw new Error("Usage: coolstory checkpoints <list|materialize>");
 }
 
 async function checkpoint(args) {

@@ -204,7 +204,7 @@ async function handle(message) {
     send(message.id, {
       protocolVersion: "2024-11-05",
       capabilities: { tools: {} },
-      serverInfo: { name: "coolstory-mcp", version: "0.1.18" },
+      serverInfo: { name: "coolstory-mcp", version: "0.1.20" },
     });
     return;
   }
