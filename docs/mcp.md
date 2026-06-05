@@ -1,6 +1,6 @@
 # MCP Server
 
-CoolStory exposes a hosted Auth0-protected MCP endpoint at `https://coolstory.dev/api/mcp` and also includes `coolstory-mcp`, a local stdio MCP server for clients that cannot use hosted MCP.
+CoolStory exposes a hosted Auth0-protected MCP endpoint at `https://coolstory.dev/mcp` and also includes `coolstory-mcp`, a local stdio MCP server for clients that cannot use hosted MCP.
 
 Use hosted MCP by default when the agent runtime can call remote tools. Use local stdio MCP when the client requires a local command. Use the `coolstory` CLI when the agent is shell-first or needs local file operations such as `bmad start`, `bmad sync`, `clone`, or `bmad handoff`.
 
@@ -9,7 +9,7 @@ Use hosted MCP by default when the agent runtime can call remote tools. Use loca
 Register the hosted MCP server in remote-capable clients:
 
 ```text
-Server URL: https://coolstory.dev/api/mcp
+Server URL: https://coolstory.dev/mcp
 Transport: MCP Streamable HTTP, protocol 2025-11-25
 Auth: Auth0 OAuth/OIDC through the client's remote-MCP auth flow
 Protected resource metadata: https://coolstory.dev/.well-known/oauth-protected-resource

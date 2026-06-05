@@ -126,7 +126,7 @@ Runs a local stdio MCP server using `COOLSTORY_TOKEN` or the token saved by `coo
 Prefer hosted MCP for managed agents:
 
 ```text
-Server URL: https://coolstory.dev/api/mcp
+Server URL: https://coolstory.dev/mcp
 Transport: MCP Streamable HTTP, protocol 2025-11-25
 Auth: Auth0 OAuth/OIDC through the client's remote-MCP auth flow
 Protected resource metadata: https://coolstory.dev/.well-known/oauth-protected-resource
