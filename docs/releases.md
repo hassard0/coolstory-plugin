@@ -29,15 +29,15 @@ The packaged smoke launches the built app on the native runner, verifies it open
 
 ## Latest Verified Release
 
-`v0.1.20` passed MCP, CLI, source desktop, and packaged app smoke on:
+`v0.1.21` passed MCP, CLI, source desktop, and packaged app smoke on:
 
 - Windows Server 2025 runner for `coolstory-desktop-win-x64.exe`
 - macOS 14 ARM runner for `coolstory-desktop-macos-arm64.zip`
 - Ubuntu 24.04 runner for `coolstory-desktop-linux-x64.AppImage`
 
-This release adds `coolstory checkpoints materialize`, keeps MCP version reporting aligned with the package, and preserves the BMAD artifact metadata inference from `v0.1.19`.
+This release adds the `coolstory_materialize_checkpoint` MCP tool on top of the `coolstory checkpoints materialize` CLI command.
 
-Release page: https://github.com/hassard0/coolstory-plugin/releases/tag/v0.1.20
+Release page: https://github.com/hassard0/coolstory-plugin/releases/tag/v0.1.21
 
 ## Local Native Build
 
